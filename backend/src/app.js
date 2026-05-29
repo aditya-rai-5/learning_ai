@@ -4,6 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./auth/auth.routes.js";
 import userSkillRoutes from "./user_skill/user_skill.routes.js";
+import courseRoutes from "./course/course.routes.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user-skills", userSkillRoutes);
+app.use("/api/courses", courseRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });

@@ -155,3 +155,145 @@
   "message": "Skill removed successfully"
 }
 ```
+
+---
+
+## 7. Create Course
+**URL:** `POST /api/courses`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+```json
+{
+  "title": "Introduction to AI",
+  "description": "Learn the basics of Artificial Intelligence.",
+  "level": "BEGINNER",
+  "tags": ["AI", "Machine Learning"],
+  "thumbnailUrl": "https://example.com/ai-thumb.jpg"
+}
+```
+
+**Output JSON (201 Created):**
+```json
+{
+  "message": "Course created successfully",
+  "course": {
+    "id": "course-uuid-string",
+    "title": "Introduction to AI",
+    "slug": "introduction-to-ai-a1b2c3",
+    "description": "Learn the basics of Artificial Intelligence.",
+    "level": "BEGINNER",
+    "tags": ["AI", "Machine Learning"],
+    "thumbnailUrl": "https://example.com/ai-thumb.jpg",
+    "createdBy": "user-uuid-string",
+    "createdAt": "2026-05-29T11:00:00.000Z"
+  }
+}
+```
+
+---
+
+## 8. Get All Courses
+**URL:** `GET /api/courses`
+
+**Input JSON:**
+*(No request body needed)*
+
+**Output JSON (200 OK):**
+```json
+[
+  {
+    "id": "course-uuid-string",
+    "title": "Introduction to AI",
+    "slug": "introduction-to-ai-a1b2c3",
+    "description": "Learn the basics of Artificial Intelligence.",
+    "level": "BEGINNER",
+    "tags": ["AI", "Machine Learning"],
+    "thumbnailUrl": "https://example.com/ai-thumb.jpg",
+    "createdBy": "user-uuid-string",
+    "createdAt": "2026-05-29T11:00:00.000Z",
+    "creator": {
+      "id": "user-uuid-string",
+      "name": "John Doe",
+      "avatarUrl": "https://example.com/avatar.jpg"
+    }
+  }
+]
+```
+
+---
+
+## 9. Get Course by ID or Slug
+**URL:** `GET /api/courses/:id_or_slug`
+
+**Input JSON:**
+*(No request body needed)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "id": "course-uuid-string",
+  "title": "Introduction to AI",
+  "slug": "introduction-to-ai-a1b2c3",
+  "description": "Learn the basics of Artificial Intelligence.",
+  "level": "BEGINNER",
+  "tags": ["AI", "Machine Learning"],
+  "thumbnailUrl": "https://example.com/ai-thumb.jpg",
+  "createdBy": "user-uuid-string",
+  "createdAt": "2026-05-29T11:00:00.000Z",
+  "creator": {
+    "id": "user-uuid-string",
+    "name": "John Doe",
+    "avatarUrl": "https://example.com/avatar.jpg"
+  },
+  "modules": []
+}
+```
+
+---
+
+## 10. Update Course
+**URL:** `PUT /api/courses/:id`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+```json
+{
+  "title": "Advanced AI Concepts",
+  "level": "ADVANCED"
+}
+```
+
+**Output JSON (200 OK):**
+```json
+{
+  "message": "Course updated successfully",
+  "course": {
+    "id": "course-uuid-string",
+    "title": "Advanced AI Concepts",
+    "slug": "advanced-ai-concepts-d4e5f6",
+    "description": "Learn the basics of Artificial Intelligence.",
+    "level": "ADVANCED",
+    "tags": ["AI", "Machine Learning"],
+    "thumbnailUrl": "https://example.com/ai-thumb.jpg",
+    "createdBy": "user-uuid-string",
+    "createdAt": "2026-05-29T11:00:00.000Z"
+  }
+}
+```
+
+---
+
+## 11. Delete Course
+**URL:** `DELETE /api/courses/:id`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+*(No request body needed)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "message": "Course deleted successfully"
+}
+```
