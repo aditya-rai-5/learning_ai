@@ -168,6 +168,8 @@
   "title": "Introduction to AI",
   "description": "Learn the basics of Artificial Intelligence.",
   "level": "BEGINNER",
+  "price": 49.99,
+  "currency": "USD",
   "tags": ["AI", "Machine Learning"],
   "thumbnailUrl": "https://example.com/ai-thumb.jpg"
 }
@@ -183,7 +185,8 @@
     "slug": "introduction-to-ai-a1b2c3",
     "description": "Learn the basics of Artificial Intelligence.",
     "level": "BEGINNER",
-    "tags": ["AI", "Machine Learning"],
+    "price": "49.99",
+    "currency": "USD",
     "thumbnailUrl": "https://example.com/ai-thumb.jpg",
     "createdBy": "user-uuid-string",
     "createdAt": "2026-05-29T11:00:00.000Z"
@@ -208,7 +211,8 @@
     "slug": "introduction-to-ai-a1b2c3",
     "description": "Learn the basics of Artificial Intelligence.",
     "level": "BEGINNER",
-    "tags": ["AI", "Machine Learning"],
+    "price": "49.99",
+    "currency": "USD",
     "thumbnailUrl": "https://example.com/ai-thumb.jpg",
     "createdBy": "user-uuid-string",
     "createdAt": "2026-05-29T11:00:00.000Z",
@@ -216,7 +220,25 @@
       "id": "user-uuid-string",
       "name": "John Doe",
       "avatarUrl": "https://example.com/avatar.jpg"
-    }
+    },
+    "tags": [
+      {
+        "courseId": "course-uuid-string",
+        "tagId": "tag-uuid-1",
+        "tag": {
+          "id": "tag-uuid-1",
+          "name": "ai"
+        }
+      },
+      {
+        "courseId": "course-uuid-string",
+        "tagId": "tag-uuid-2",
+        "tag": {
+          "id": "tag-uuid-2",
+          "name": "machine learning"
+        }
+      }
+    ]
   }
 ]
 ```
@@ -237,7 +259,8 @@
   "slug": "introduction-to-ai-a1b2c3",
   "description": "Learn the basics of Artificial Intelligence.",
   "level": "BEGINNER",
-  "tags": ["AI", "Machine Learning"],
+  "price": "49.99",
+  "currency": "USD",
   "thumbnailUrl": "https://example.com/ai-thumb.jpg",
   "createdBy": "user-uuid-string",
   "createdAt": "2026-05-29T11:00:00.000Z",
@@ -246,6 +269,16 @@
     "name": "John Doe",
     "avatarUrl": "https://example.com/avatar.jpg"
   },
+  "tags": [
+    {
+      "courseId": "course-uuid-string",
+      "tagId": "tag-uuid-1",
+      "tag": {
+        "id": "tag-uuid-1",
+        "name": "ai"
+      }
+    }
+  ],
   "modules": []
 }
 ```
@@ -260,7 +293,9 @@
 ```json
 {
   "title": "Advanced AI Concepts",
-  "level": "ADVANCED"
+  "level": "ADVANCED",
+  "price": 59.99,
+  "tags": ["AI", "Deep Learning"]
 }
 ```
 
@@ -274,7 +309,8 @@
     "slug": "advanced-ai-concepts-d4e5f6",
     "description": "Learn the basics of Artificial Intelligence.",
     "level": "ADVANCED",
-    "tags": ["AI", "Machine Learning"],
+    "price": "59.99",
+    "currency": "USD",
     "thumbnailUrl": "https://example.com/ai-thumb.jpg",
     "createdBy": "user-uuid-string",
     "createdAt": "2026-05-29T11:00:00.000Z"
@@ -295,5 +331,442 @@
 ```json
 {
   "message": "Course deleted successfully"
+}
+```
+
+---
+
+## 12. Create Module
+**URL:** `POST /api/courses/:courseId/modules`
+*(Requires Authorization Header: `Bearer <token>` - Instructor only)*
+
+**Input JSON:**
+```json
+{
+  "title": "Getting Started",
+  "contentType": "VIDEO",
+  "body": "<iframe src='...'></iframe>",
+  "order": 1,
+  "durationS": 300
+}
+```
+
+**Output JSON (201 Created):**
+```json
+{
+  "message": "Module created successfully",
+  "module": {
+    "id": "module-uuid",
+    "courseId": "course-uuid",
+    "title": "Getting Started",
+    "contentType": "VIDEO",
+    "body": "<iframe src='...'></iframe>",
+    "order": 1,
+    "durationS": 300
+  }
+}
+```
+
+---
+
+## 13. Get Course Modules
+**URL:** `GET /api/courses/:courseId/modules`
+*(Requires Authorization Header: `Bearer <token>` - Must be enrolled or creator)*
+
+**Output JSON (200 OK):**
+```json
+[
+  {
+    "id": "module-uuid",
+    "courseId": "course-uuid",
+    "title": "Getting Started",
+    "contentType": "VIDEO",
+    "body": "<iframe src='...'></iframe>",
+    "order": 1,
+    "durationS": 300
+  }
+]
+```
+
+---
+
+## 14. Enroll in Course (or Purchase)
+**URL:** `POST /api/payments/enroll/:courseId`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+```json
+{
+  "gateway": "STRIPE"
+}
+```
+
+**Output JSON (Free Course - 200 OK):**
+```json
+{
+  "message": "Successfully enrolled in free course",
+  "enrollment": {
+    "id": "enrollment-uuid",
+    "userId": "user-uuid",
+    "courseId": "course-uuid",
+    "enrolledAt": "2026-05-30T10:00:00.000Z"
+  }
+}
+```
+
+**Output JSON (Paid Course - 200 OK):**
+```json
+{
+  "message": "Payment required",
+  "paymentDetails": {
+    "status": "PAYMENT_REQUIRED",
+    "paymentId": "payment-uuid",
+    "amount": 49.99,
+    "currency": "USD",
+    "instructorId": "instructor-uuid"
+  }
+}
+```
+
+---
+
+## 15. Get My Enrollments
+**URL:** `GET /api/enrollments`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Output JSON (200 OK):**
+```json
+[
+  {
+    "id": "enrollment-uuid",
+    "userId": "user-uuid",
+    "courseId": "course-uuid",
+    "enrolledAt": "2026-05-30T10:00:00.000Z",
+    "course": {
+      "id": "course-uuid",
+      "title": "Introduction to AI",
+      "thumbnailUrl": "...",
+      "creator": { "name": "John Doe" }
+    },
+    "progress": []
+  }
+]
+```
+
+---
+
+## 16. Update Module Progress
+**URL:** `POST /api/enrollments/:courseId/progress/:moduleId`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+```json
+{
+  "status": "COMPLETED",
+  "timeSpentS": 60,
+  "lastPosition": "300"
+}
+```
+
+**Output JSON (200 OK):**
+```json
+{
+  "message": "Progress updated",
+  "progress": {
+    "id": "progress-uuid",
+    "enrollmentId": "enrollment-uuid",
+    "moduleId": "module-uuid",
+    "status": "COMPLETED",
+    "timeSpentS": 360,
+    "lastPosition": "300",
+    "updatedAt": "2026-05-30T10:00:00.000Z"
+  }
+}
+```
+
+---
+
+## 17. Complete Course
+**URL:** `POST /api/enrollments/:courseId/complete`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+*(No request body needed)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "message": "Course marked as completed",
+  "enrollment": {
+    "id": "enrollment-uuid",
+    "userId": "user-uuid",
+    "courseId": "course-uuid",
+    "completedAt": "2026-05-31T10:00:00.000Z"
+  }
+}
+```
+
+---
+
+## 18. Payment Webhook (Simulation)
+**URL:** `POST /api/payments/webhook`
+
+**Input JSON:**
+```json
+{
+  "paymentId": "payment-uuid-from-enroll-endpoint",
+  "status": "SUCCESS"
+}
+```
+
+**Output JSON (200 OK):**
+```json
+{
+  "message": "Payment marked as SUCCESS",
+  "payment": {
+    "id": "payment-uuid",
+    "status": "SUCCESS",
+    "transactionId": "txn-xyz"
+  }
+}
+```
+
+---
+
+## 19. Get Instructor Earnings
+**URL:** `GET /api/payments/earnings`
+*(Requires Authorization Header: `Bearer <token>` - Instructor/Admin only)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "totalEarnings": 499.90,
+  "transactions": [
+    {
+      "id": "payment-uuid",
+      "amount": "49.99",
+      "currency": "USD",
+      "status": "SUCCESS",
+      "createdAt": "2026-05-31T10:00:00.000Z",
+      "course": { "title": "Introduction to AI" },
+      "user": { "name": "Jane Student", "email": "jane@example.com" }
+    }
+  ]
+}
+```
+
+---
+
+## 20. Create Assessment
+**URL:** `POST /api/courses/:courseId/assessments`
+*(Or `POST /api/courses/:courseId/modules/:moduleId/assessments` to link to a module)*
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+```json
+{
+  "title": "AI Basics Quiz",
+  "passScore": 10,
+  "maxAttempts": 3,
+  "timeLimitS": 600
+}
+```
+
+**Output JSON (201 Created):**
+```json
+{
+  "id": "assessment-uuid",
+  "courseId": "course-uuid",
+  "moduleId": null,
+  "title": "AI Basics Quiz",
+  "passScore": 10,
+  "maxAttempts": 3,
+  "timeLimitS": 600
+}
+```
+
+---
+
+## 21. Add Question to Assessment
+**URL:** `POST /api/assessments/:assessmentId/questions`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+```json
+{
+  "type": "MULTIPLE_CHOICE",
+  "prompt": "What does AI stand for?",
+  "optionsJson": ["Artificial Intelligence", "Automated Interface"],
+  "answerKey": "Artificial Intelligence",
+  "points": 5
+}
+```
+
+**Output JSON (201 Created):**
+```json
+{
+  "id": "question-uuid",
+  "assessmentId": "assessment-uuid",
+  "type": "MULTIPLE_CHOICE",
+  "prompt": "What does AI stand for?",
+  "optionsJson": ["Artificial Intelligence", "Automated Interface"],
+  "answerKey": "Artificial Intelligence",
+  "points": 5
+}
+```
+
+---
+
+## 22. Get Assessment (Instructor - Includes Answers)
+**URL:** `GET /api/assessments/:assessmentId/instructor`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "id": "assessment-uuid",
+  "title": "AI Basics Quiz",
+  "questions": [
+    {
+      "id": "question-uuid",
+      "prompt": "What does AI stand for?",
+      "answerKey": "Artificial Intelligence",
+      "points": 5
+    }
+  ]
+}
+```
+
+---
+
+## 23. Get Assessment (Student - Hides Answers)
+**URL:** `GET /api/assessments/:assessmentId`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "id": "assessment-uuid",
+  "title": "AI Basics Quiz",
+  "questions": [
+    {
+      "id": "question-uuid",
+      "prompt": "What does AI stand for?",
+      "optionsJson": ["Artificial Intelligence", "Automated Interface"],
+      "points": 5
+    }
+  ]
+}
+```
+
+---
+
+## 24. Start Assessment Attempt
+**URL:** `POST /api/assessments/:assessmentId/attempts`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Output JSON (201 Created):**
+```json
+{
+  "id": "attempt-uuid",
+  "assessmentId": "assessment-uuid",
+  "userId": "user-uuid",
+  "score": 0,
+  "answersJson": {},
+  "passed": false,
+  "startedAt": "2026-05-31T10:00:00.000Z"
+}
+```
+
+---
+
+## 25. Submit Assessment Attempt
+**URL:** `POST /api/attempts/:attemptId/submit`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Input JSON:**
+```json
+{
+  "answers": {
+    "question-uuid-1": "Artificial Intelligence",
+    "question-uuid-2": "True"
+  }
+}
+```
+
+**Output JSON (200 OK):**
+```json
+{
+  "id": "attempt-uuid",
+  "score": 10,
+  "answersJson": {
+    "question-uuid-1": "Artificial Intelligence"
+  },
+  "passed": true,
+  "submittedAt": "2026-05-31T10:05:00.000Z"
+}
+```
+
+---
+
+## 26. Issue Certificate
+**URL:** `POST /api/courses/:courseId/certificates`
+*(Requires Authorization Header: `Bearer <token>` - Must have completed course)*
+
+**Input JSON:**
+*(No request body needed)*
+
+**Output JSON (201 Created):**
+```json
+{
+  "message": "Certificate issued successfully",
+  "certificate": {
+    "id": "cert-uuid",
+    "userId": "user-uuid",
+    "courseId": "course-uuid",
+    "hash": "random-hex-hash",
+    "certUrl": "https://example.com/certificates/hash.pdf",
+    "issuedAt": "2026-05-31T10:00:00.000Z"
+  }
+}
+```
+
+---
+
+## 27. Get My Certificates
+**URL:** `GET /api/my-certificates`
+*(Requires Authorization Header: `Bearer <token>`)*
+
+**Output JSON (200 OK):**
+```json
+[
+  {
+    "id": "cert-uuid",
+    "courseId": "course-uuid",
+    "certUrl": "https://example.com/certificates/hash.pdf",
+    "course": {
+      "id": "course-uuid",
+      "title": "Introduction to AI",
+      "thumbnailUrl": "..."
+    }
+  }
+]
+```
+
+---
+
+## 28. Verify Certificate
+**URL:** `GET /api/certificates/verify/:hash`
+*(Public endpoint, no auth required)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "valid": true,
+  "certificate": {
+    "id": "cert-uuid",
+    "user": { "name": "Jane Student" },
+    "course": { "title": "Introduction to AI" }
+  }
 }
 ```

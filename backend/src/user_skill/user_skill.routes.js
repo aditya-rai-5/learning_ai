@@ -1,11 +1,11 @@
 import { Router } from "express";
 import * as userSkillController from "./user_skill.controller.js";
-import { authMiddleware } from "../../middleware/auth.middleware.js";
+import { authenticateUser } from "../../middleware/auth.middleware.js";
 
 const router = Router();
 
 // Protect all user skill routes
-router.use(authMiddleware);
+router.use(authenticateUser);
 
 router.post("/", userSkillController.addSkill);
 router.get("/", userSkillController.getSkills);

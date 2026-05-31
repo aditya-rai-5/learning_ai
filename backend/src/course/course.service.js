@@ -8,8 +8,17 @@ const generateSlug = (title) => {
 };
 
 export const createCourse = async (userId, courseData) => {
-    const { title, description, level, tags, thumbnailUrl } = courseData;
+    const { title, description, level, tags, thumbnailUrl, price, currency } = courseData;
     const slug = generateSlug(title);
+
+    const tagConnections = Array.isArray(tags) ? tags.map(tagName => ({
+        tag: {
+            connectOrCreate: {
+                where: { name: tagName.toLowerCase() },
+                create: { name: tagName.toLowerCase() }
+            }
+        }
+    })) : [];
 
     return prisma.course.create({
         data: {
@@ -17,7 +26,11 @@ export const createCourse = async (userId, courseData) => {
             slug,
             description,
             level: level || 'BEGINNER',
-            tags: tags || [],
+            price: price ? parseFloat(price) : 0.00,
+            currency: currency || 'USD',
+            tags: {
+                create: tagConnections
+            },
             thumbnailUrl,
             createdBy: userId,
         },
@@ -29,6 +42,9 @@ export const getAllCourses = async () => {
         include: {
             creator: {
                 select: { id: true, name: true, avatarUrl: true }
+            },
+            tags: {
+                include: { tag: true }
             }
         },
         orderBy: { createdAt: 'desc' }
@@ -45,6 +61,7 @@ export const getCourseByIdOrSlug = async (identifier) => {
         },
         include: {
             creator: { select: { id: true, name: true, avatarUrl: true } },
+            tags: { include: { tag: true } },
             modules: { orderBy: { order: 'asc' } }
         }
     });
@@ -65,15 +82,40 @@ export const updateCourse = async (userId, courseId, updateData) => {
         throw new Error("Unauthorized to modify this course");
     }
 
-    // If title is updated, optionally update slug, but usually it's safer to keep the old one or generate a new unique one.
-    // We'll generate a new one if title changes.
     if (updateData.title) {
         updateData.slug = generateSlug(updateData.title);
     }
 
+    const { tags, price, ...restUpdateData } = updateData;
+
+    let tagsUpdate = {};
+    if (tags && Array.isArray(tags)) {
+        // We delete all existing tag connections for this course, then create new ones
+        tagsUpdate = {
+            tags: {
+                deleteMany: {},
+                create: tags.map(tagName => ({
+                    tag: {
+                        connectOrCreate: {
+                            where: { name: tagName.toLowerCase() },
+                            create: { name: tagName.toLowerCase() }
+                        }
+                    }
+                }))
+            }
+        };
+    }
+
+    if (price !== undefined) {
+        restUpdateData.price = parseFloat(price);
+    }
+
     return prisma.course.update({
         where: { id: courseId },
-        data: updateData,
+        data: {
+            ...restUpdateData,
+            ...tagsUpdate
+        },
     });
 };
 
