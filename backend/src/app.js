@@ -16,6 +16,7 @@ import bookmarkRoutes from "./bookmark/bookmark.routes.js";
 import discussionRoutes from "./discussion/discussion.routes.js";
 import notificationRoutes from "./notification/notification.routes.js";
 import studySessionRoutes from "./study_session/study_session.routes.js";
+import aiRoutes from "./ai/ai.routes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user-skills", userSkillRoutes);
 app.use("/api/courses/:courseId/modules", moduleRoutes);
 app.use("/api/courses/:courseId/reviews", reviewRoutes);
+app.use("/api/courses/:courseId", aiRoutes);   // AI: /chat, /ingest, /ai-config, /document-sources
 app.use("/api/courses", courseRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/enrollments", enrollmentRoutes);

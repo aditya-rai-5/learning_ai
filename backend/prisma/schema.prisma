@@ -149,6 +149,7 @@ model Module {
   ragContext  RagContext[]
   bookmarks   Bookmark[]
   threads     DiscussionThread[]
+  interactions Interaction[]
 
   @@map("modules")
 }
@@ -319,6 +320,8 @@ model Interaction {
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId          String       @map("course_id")
   course            Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId          String?      @map("module_id")
+  module            Module?      @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   role              String
   message           String
   retrievedChunkIds String[]     @map("retrieved_chunk_ids")
