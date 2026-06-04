@@ -770,3 +770,151 @@
   }
 }
 ```
+
+---
+
+## 29. Create Learning Path
+**URL:** `POST /api/learning-paths`
+*(Requires Authorization Header: `Bearer <token>` - Instructor/Admin only)*
+
+**Input JSON:**
+```json
+{
+  "title": "Full-Stack Web Developer Path",
+  "description": "Master frontend and backend development.",
+  "tags": ["web", "full-stack"],
+  "courses": [
+    { "courseId": "course-uuid-1", "order": 1 },
+    { "courseId": "course-uuid-2", "order": 2 }
+  ]
+}
+```
+
+**Output JSON (201 Created):**
+```json
+{
+  "message": "Learning path created successfully",
+  "path": {
+    "id": "path-uuid",
+    "title": "Full-Stack Web Developer Path",
+    "description": "Master frontend and backend development.",
+    "createdBy": "user-uuid",
+    "tags": ["web", "full-stack"],
+    "courses": [
+      {
+        "id": "lpc-uuid-1",
+        "pathId": "path-uuid",
+        "courseId": "course-uuid-1",
+        "order": 1,
+        "course": {
+          "title": "HTML & CSS Basics",
+          "thumbnailUrl": "..."
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 30. Get All Learning Paths
+**URL:** `GET /api/learning-paths`
+
+**Output JSON (200 OK):**
+```json
+[
+  {
+    "id": "path-uuid",
+    "title": "Full-Stack Web Developer Path",
+    "description": "Master frontend and backend development.",
+    "createdBy": "user-uuid",
+    "tags": ["web", "full-stack"],
+    "creator": { "name": "John Doe" },
+    "courses": [
+      {
+        "order": 1,
+        "course": {
+          "id": "course-uuid-1",
+          "title": "HTML & CSS Basics",
+          "slug": "html-css-basics",
+          "level": "BEGINNER"
+        }
+      }
+    ]
+  }
+]
+```
+
+---
+
+## 31. Get Learning Path By ID
+**URL:** `GET /api/learning-paths/:pathId`
+
+**Output JSON (200 OK):**
+```json
+{
+  "id": "path-uuid",
+  "title": "Full-Stack Web Developer Path",
+  "description": "Master frontend and backend development.",
+  "createdBy": "user-uuid",
+  "tags": ["web", "full-stack"],
+  "creator": { "name": "John Doe" },
+  "courses": [
+    {
+      "order": 1,
+      "course": {
+        "id": "course-uuid-1",
+        "title": "HTML & CSS Basics",
+        "description": "...",
+        "slug": "html-css-basics",
+        "level": "BEGINNER",
+        "price": "49.99"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 32. Update Learning Path
+**URL:** `PUT /api/learning-paths/:pathId`
+*(Requires Authorization Header: `Bearer <token>` - Creator/Admin only)*
+
+**Input JSON:**
+```json
+{
+  "title": "Advanced Full-Stack Path",
+  "description": "An updated description.",
+  "tags": ["web", "advanced"],
+  "courses": [
+    { "courseId": "course-uuid-2", "order": 1 },
+    { "courseId": "course-uuid-3", "order": 2 }
+  ]
+}
+```
+
+**Output JSON (200 OK):**
+```json
+{
+  "message": "Learning path updated successfully",
+  "path": {
+    "id": "path-uuid",
+    "title": "Advanced Full-Stack Path"
+  }
+}
+```
+
+---
+
+## 33. Delete Learning Path
+**URL:** `DELETE /api/learning-paths/:pathId`
+*(Requires Authorization Header: `Bearer <token>` - Creator/Admin only)*
+
+**Output JSON (200 OK):**
+```json
+{
+  "message": "Learning path deleted successfully"
+}
+```

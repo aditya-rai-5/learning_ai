@@ -47,7 +47,7 @@ export const updateCourse = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { id } = req.params;
-    
+
     const course = await courseService.updateCourse(userId, id, req.body);
     res.status(200).json({ message: "Course updated successfully", course });
   } catch (error) {
