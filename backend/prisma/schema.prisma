@@ -35,6 +35,7 @@ model User {
   courseReviews      CourseReview[]
   threads            DiscussionThread[]
   replies            DiscussionReply[]
+  replyUpvotes       ReplyUpvote[]
   studentPayments    Payment[]           @relation("StudentPayments")
   instructorPayments Payment[]           @relation("InstructorPayments")
 
@@ -104,16 +105,19 @@ model Course {
   id            String               @id @default(uuid())
   title         String
   slug          String               @unique
-  description   String
-  level         CourseLevel          @default(BEGINNER)
+  description      String
+  learningOutcomes String[]             @map("learning_outcomes")
+  level            CourseLevel          @default(BEGINNER)
   price         Decimal              @default(0.00) @db.Decimal(10, 2)
   currency      String               @default("USD")
   tags          CourseTag[]
   thumbnailUrl  String?              @map("thumbnail_url")
+  accentColor   String?              @map("accent_color")
   createdBy     String               @map("created_by")
   creator       User                 @relation("CourseCreator", fields: [createdBy], references: [id])
   createdAt     DateTime             @default(now()) @map("created_at")
   modules       Module[]
+  threads       DiscussionThread[]
   learningPaths LearningPathCourse[]
   enrollments   Enrollment[]
   studySessions StudySession[]
@@ -150,6 +154,7 @@ model Module {
   bookmarks   Bookmark[]
   threads     DiscussionThread[]
   interactions Interaction[]
+  studySessions StudySession[]
 
   @@map("modules")
 }
@@ -164,6 +169,7 @@ model LearningPath {
   id               String               @id @default(uuid())
   title            String
   description      String
+  accentColor      String?              @map("accent_color")
   createdBy        String               @map("created_by")
   creator          User                 @relation("PathCreator", fields: [createdBy], references: [id])
   tags             String[]
@@ -234,6 +240,8 @@ model StudySession {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId  String   @map("course_id")
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId  String?  @map("module_id")
+  module    Module?  @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   startedAt DateTime @map("started_at")
   endedAt   DateTime @map("ended_at")
   durationS Int      @map("duration_s")
@@ -307,7 +315,7 @@ model RagContext {
   versionId  String                       @map("version_id")
   version    ContentVersion               @relation(fields: [versionId], references: [id])
   chunkText  String                       @map("chunk_text")
-  embedding  Unsupported("vector(1536)")? // Using pgvector
+  embedding  Unsupported("vector(1024)")? // Using pgvector
   chunkOrder Int                          @map("chunk_order")
   tokenCount Int                          @map("token_count")
 
@@ -402,12 +410,15 @@ model CourseReview {
 
 model DiscussionThread {
   id        String            @id @default(uuid())
-  moduleId  String            @map("module_id")
-  module    Module            @relation(fields: [moduleId], references: [id])
+  courseId  String?           @map("course_id")
+  course    Course?           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId  String?           @map("module_id")
+  module    Module?           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   authorId  String            @map("author_id")
   author    User              @relation(fields: [authorId], references: [id])
   title     String
   body      String
+  tags      String[]
   pinned    Boolean           @default(false)
   createdAt DateTime          @default(now()) @map("created_at")
   replies   DiscussionReply[]
@@ -416,17 +427,32 @@ model DiscussionThread {
 }
 
 model DiscussionReply {
-  id        String           @id @default(uuid())
-  threadId  String           @map("thread_id")
-  thread    DiscussionThread @relation(fields: [threadId], references: [id])
-  authorId  String           @map("author_id")
-  author    User             @relation(fields: [authorId], references: [id])
-  body      String
-  upvotes   Int              @default(0)
-  isAnswer  Boolean          @default(false) @map("is_answer")
-  createdAt DateTime         @default(now()) @map("created_at")
+  id            String            @id @default(uuid())
+  threadId      String            @map("thread_id")
+  thread        DiscussionThread  @relation(fields: [threadId], references: [id])
+  parentReplyId String?           @map("parent_reply_id")
+  parentReply   DiscussionReply?  @relation("NestedReply", fields: [parentReplyId], references: [id])
+  childReplies  DiscussionReply[] @relation("NestedReply")
+  authorId      String            @map("author_id")
+  author        User              @relation(fields: [authorId], references: [id])
+  body          String
+  upvotes       ReplyUpvote[]
+  isAnswer      Boolean           @default(false) @map("is_answer")
+  createdAt     DateTime          @default(now()) @map("created_at")
 
   @@map("discussion_replies")
+}
+
+model ReplyUpvote {
+  id        String          @id @default(uuid())
+  replyId   String          @map("reply_id")
+  reply     DiscussionReply @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  userId    String          @map("user_id")
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  @@unique([replyId, userId])
+  @@map("reply_upvotes")
 }
 
 model Payment {

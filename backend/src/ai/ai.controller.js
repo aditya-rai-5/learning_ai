@@ -67,6 +67,7 @@ export const submitFeedback = async (req, res) => {
 
     res.status(200).json({ message: 'Feedback submitted', feedback });
   } catch (error) {
+    if (error.message.includes('Rating')) return res.status(400).json({ error: error.message });
     if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
     if (error.message.includes('Forbidden') || error.message.includes('Unauthorized')) {
       return res.status(403).json({ error: error.message });

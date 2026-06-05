@@ -1,6 +1,6 @@
 import prisma from '../config/db.config.js';
 
-export const startSession = async (userId, courseId) => {
+export const startSession = async (userId, courseId, moduleId) => {
     // Check for an already active session for this user (where endedAt is the same as startedAt or in the future if pre-set)
     // For simplicity, we create a new session record when started.
     
@@ -8,6 +8,7 @@ export const startSession = async (userId, courseId) => {
         data: {
             userId,
             courseId,
+            moduleId: moduleId || null,
             startedAt: new Date(),
             endedAt: new Date(), // Will be updated on end
             durationS: 0
@@ -45,7 +46,8 @@ export const getUserStudySessions = async (userId, courseId) => {
         where,
         orderBy: { startedAt: 'desc' },
         include: {
-            course: { select: { title: true } }
+            course: { select: { title: true } },
+            module: { select: { id: true, title: true } }
         }
     });
 };

@@ -42,6 +42,7 @@ describe('Learning Paths', () => {
       .send({
         title: 'Full Stack Path',
         description: 'Learn it all',
+        accentColor: '#6a1b9a',
         tags: ['web'],
         courses: [
           { courseId: course1Id, order: 1 },
@@ -51,6 +52,7 @@ describe('Learning Paths', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.path.title).toBe('Full Stack Path');
+    expect(res.body.path.accentColor).toBe('#6a1b9a');
     expect(res.body.path.courses.length).toBe(2);
     pathId = res.body.path.id;
   });

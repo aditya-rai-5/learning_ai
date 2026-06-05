@@ -18,7 +18,7 @@ export const createLearningPath = async (userId, userRole, data) => {
         throw new Error("Unauthorized: Only instructors or admins can create learning paths");
     }
 
-    const { title, description, tags, courses } = data;
+    const { title, description, tags, courses, accentColor } = data;
     // courses expected as: [{ courseId: "...", order: 1 }, { courseId: "...", order: 2 }]
 
     const tagConnections = buildTagConnections(tags);
@@ -27,6 +27,7 @@ export const createLearningPath = async (userId, userRole, data) => {
         data: {
             title,
             description,
+            accentColor,
             createdBy: userId,
             tags: tags || [], // storing scalar array as per schema
             learningPathTags: { create: tagConnections }, // relational tags
@@ -87,9 +88,9 @@ export const updateLearningPath = async (userId, userRole, pathId, data) => {
         throw new Error("Unauthorized to modify this learning path");
     }
 
-    const { title, description, tags, courses } = data;
+    const { title, description, tags, courses, accentColor } = data;
 
-    let updateData = { title, description };
+    let updateData = { title, description, accentColor };
 
     if (tags !== undefined) {
         updateData.tags = tags;

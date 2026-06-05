@@ -154,13 +154,23 @@ describe('Community Endpoints', () => {
       replyId = res.body.reply.id;
     });
 
+    it('should create a nested child reply', async () => {
+      const res = await request(app)
+        .post(`/api/threads/${threadId}/replies`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ body: 'Thank you Professor!', parentReplyId: replyId });
+
+      expect(res.status).toBe(201);
+      expect(res.body.reply.parentReplyId).toBe(replyId);
+    });
+
     it('should upvote a reply', async () => {
       const res = await request(app)
         .post(`/api/replies/${replyId}/upvote`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.reply.upvotes).toBe(1);
+      expect(res.body.reply._count.upvotes).toBe(1);
     });
 
     it('should mark as answer', async () => {

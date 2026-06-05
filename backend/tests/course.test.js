@@ -37,9 +37,11 @@ describe('Course Endpoints', () => {
     const courseData = {
       title: 'Test Course',
       description: 'Test Description',
+      learningOutcomes: ['Outcome 1', 'Outcome 2'],
       level: 'BEGINNER',
       price: 10.99,
       tags: ['test', 'vitest'],
+      accentColor: '#1565c0'
     };
 
     const res = await request(app)
@@ -49,6 +51,8 @@ describe('Course Endpoints', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.course.title).toBe(courseData.title);
+    expect(res.body.course.accentColor).toBe('#1565c0');
+    expect(res.body.course.learningOutcomes).toEqual(expect.arrayContaining(['Outcome 1']));
     courseId = res.body.course.id;
   });
 

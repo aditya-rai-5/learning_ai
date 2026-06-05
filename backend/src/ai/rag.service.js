@@ -1,20 +1,38 @@
 import OpenAI from 'openai';
 import prisma from '../config/db.config.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const EMBEDDING_MODEL = 'text-embedding-3-small'; // 1536 dims — matches schema vector(1536)
+// Mistral's API is OpenAI-compatible — same SDK, just a different baseURL and key.
+// Free tier: https://console.mistral.ai → create an API key.
+
+let _mistral = null;
+const getMistral = () => {
+  if (!_mistral) {
+    // If running in test without an API key, fallback to a dummy key so initialization succeeds
+    // The key won't actually be used unless tests call the live API (which they should mock).
+    const apiKey = process.env.MISTRAL_API_KEY || (process.env.NODE_ENV === 'test' ? 'test-dummy-key' : undefined);
+
+    _mistral = new OpenAI({
+      apiKey: apiKey,
+      baseURL: 'https://api.mistral.ai/v1',
+    });
+  }
+  return _mistral;
+};
+
+const EMBEDDING_MODEL = 'mistral-embed'; // 1024 dims — schema must use vector(1024)
 
 /**
- * Generate a 1536-dim embedding vector for a text string.
- * Newlines are collapsed to spaces (OpenAI recommendation for embeddings).
+ * Generate a 1024-dim embedding vector for a text string.
+ * Newlines are collapsed to spaces (standard pre-processing for embeddings).
  */
 export const generateEmbedding = async (text) => {
   const cleaned = text.replace(/\n+/g, ' ').trim();
-  const response = await openai.embeddings.create({
+  const mistral = getMistral();
+  const response = await mistral.embeddings.create({
     model: EMBEDDING_MODEL,
     input: cleaned,
   });
-  return response.data[0].embedding; // number[1536]
+  return response.data[0].embedding; // number[1024]
 };
 
 /**
@@ -25,7 +43,7 @@ export const generateEmbedding = async (text) => {
  *   - courseId only     → search all chunks across the whole course (broader fallback)
  *
  * Uses $queryRawUnsafe because Prisma does not support the pgvector <=> operator
- * natively. The values are controlled: embedding is floats from OpenAI,
+ * natively. Values are controlled: embedding is floats from Mistral,
  * IDs are validated UUIDs, topK is an integer we own.
  */
 export const vectorSearch = async ({ embeddingVector, moduleId, courseId, topK = 5 }) => {
@@ -69,15 +87,15 @@ export const vectorSearch = async ({ embeddingVector, moduleId, courseId, topK =
  * Hybrid re-ranking for video modules.
  *
  * Blends semantic similarity with timestamp proximity to the user's playhead
- * so that a chunk physically near where they're watching is boosted — even
- * if it's not the most semantically similar result globally.
+ * so that a chunk physically near where they are watching is boosted — even
+ * if it is not the most semantically similar result globally.
  *
- * Formula:  finalScore = similarity × wSemantic + proximity × wTemporal
+ * Formula:  finalScore = similarity x wSemantic + proximity x wTemporal
  * Proximity = max(0, 1 - |chunk_midpoint_s - playheadS| / windowS)
  *
- * @param {Array}  chunks     - Results from vectorSearch(), each has similarity, start_time_s, end_time_s
+ * @param {Array}  chunks     - Results from vectorSearch()
  * @param {number} playheadS  - User's current position in seconds
- * @param {number} windowS    - Decay window: chunks >windowS seconds away score 0 for proximity (default 5 min)
+ * @param {number} windowS    - Decay window in seconds (default 5 min)
  * @param {number} wSemantic  - Semantic weight (default 0.7)
  * @param {number} wTemporal  - Temporal weight (default 0.3)
  */
@@ -85,7 +103,7 @@ export const hybridRankChunks = (chunks, playheadS, windowS = 300, wSemantic = 0
   return chunks
     .map(chunk => {
       const startS = chunk.start_time_s ?? null;
-      const endS = chunk.end_time_s ?? null;
+      const endS   = chunk.end_time_s   ?? null;
       let temporalScore = 0;
 
       if (startS !== null && endS !== null) {

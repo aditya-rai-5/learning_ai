@@ -91,14 +91,25 @@ describe('Notifications & Study Sessions', () => {
 
   // --- STUDY SESSIONS ---
   describe('Study Sessions', () => {
+    let moduleId;
+    
+    beforeAll(async () => {
+      const moduleRes = await request(app)
+        .post(`/api/courses/${courseId}/modules`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ title: 'Study Mod', contentType: 'TEXT', body: 'body', order: 1, durationS: 10 });
+      moduleId = moduleRes.body.module.id;
+    });
+
     it('should start a study session', async () => {
       const res = await request(app)
         .post('/api/study-sessions/start')
         .set('Authorization', `Bearer ${userToken}`)
-        .send({ courseId });
+        .send({ courseId, moduleId });
 
       expect(res.status).toBe(201);
       expect(res.body.session.courseId).toBe(courseId);
+      expect(res.body.session.moduleId).toBe(moduleId);
       sessionId = res.body.session.id;
     });
 

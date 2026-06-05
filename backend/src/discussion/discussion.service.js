@@ -2,20 +2,33 @@ import prisma from '../config/db.config.js';
 
 // --- Threads ---
 
-export const createThread = async (authorId, moduleId, title, body) => {
+export const createThread = async (authorId, threadData) => {
+    const { moduleId, courseId, title, body, tags } = threadData;
     return prisma.discussionThread.create({
         data: {
             authorId,
-            moduleId,
+            moduleId: moduleId || null,
+            courseId: courseId || null,
             title,
-            body
+            body,
+            tags: Array.isArray(tags) ? tags : (tags ? [tags] : [])
         }
     });
 };
 
-export const getThreadsByModule = async (moduleId) => {
+export const getThreads = async (filters = {}) => {
+    const { moduleId, courseId, tags } = filters;
+    const where = {};
+    
+    if (moduleId) where.moduleId = moduleId;
+    if (courseId) where.courseId = courseId;
+    if (tags) {
+        const tagsArray = Array.isArray(tags) ? tags : tags.split(',');
+        where.tags = { hasSome: tagsArray };
+    }
+
     return prisma.discussionThread.findMany({
-        where: { moduleId },
+        where,
         include: {
             author: { select: { id: true, name: true, avatarUrl: true } },
             _count: { select: { replies: true } }
@@ -34,7 +47,8 @@ export const getThreadById = async (threadId) => {
             author: { select: { id: true, name: true, avatarUrl: true } },
             replies: {
                 include: {
-                    author: { select: { id: true, name: true, avatarUrl: true } }
+                    author: { select: { id: true, name: true, avatarUrl: true } },
+                    _count: { select: { upvotes: true } }
                 },
                 orderBy: [
                     { isAnswer: 'desc' },
@@ -82,12 +96,13 @@ export const togglePinThread = async (userId, threadId, pinned) => {
 
 // --- Replies ---
 
-export const createReply = async (authorId, threadId, body) => {
+export const createReply = async (authorId, threadId, body, parentReplyId) => {
     return prisma.discussionReply.create({
         data: {
             authorId,
             threadId,
-            body
+            body,
+            parentReplyId: parentReplyId || null
         }
     });
 };
@@ -137,10 +152,19 @@ export const markAsAnswer = async (userId, replyId) => {
     });
 };
 
-export const upvoteReply = async (replyId) => {
-    // Note: Simple increment. A real system would track who upvoted to prevent duplicates.
-    return prisma.discussionReply.update({
+export const upvoteReply = async (userId, replyId) => {
+    const existing = await prisma.replyUpvote.findUnique({
+        where: { replyId_userId: { replyId, userId } }
+    });
+
+    if (existing) {
+        await prisma.replyUpvote.delete({ where: { id: existing.id } });
+    } else {
+        await prisma.replyUpvote.create({ data: { replyId, userId } });
+    }
+
+    return prisma.discussionReply.findUnique({
         where: { id: replyId },
-        data: { upvotes: { increment: 1 } }
+        include: { _count: { select: { upvotes: true } } }
     });
 };

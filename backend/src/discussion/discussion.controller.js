@@ -4,14 +4,14 @@ import * as discussionService from './discussion.service.js';
 
 export const createThread = async (req, res) => {
     try {
-        const { moduleId, title, body } = req.body;
+        const { title, body } = req.body;
         const userId = req.user.userId;
 
-        if (!moduleId || !title || !body) {
-            return res.status(400).json({ error: "Module ID, title, and body are required" });
+        if (!title || !body) {
+            return res.status(400).json({ error: "Title and body are required" });
         }
 
-        const thread = await discussionService.createThread(userId, moduleId, title, body);
+        const thread = await discussionService.createThread(userId, req.body);
         res.status(201).json({ message: "Thread created successfully", thread });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -20,11 +20,8 @@ export const createThread = async (req, res) => {
 
 export const getThreads = async (req, res) => {
     try {
-        const { moduleId } = req.query; // e.g. /api/threads?moduleId=123
-        if (!moduleId) {
-            return res.status(400).json({ error: "moduleId query parameter is required" });
-        }
-        const threads = await discussionService.getThreadsByModule(moduleId);
+        const filters = req.query; // e.g. /api/threads?courseId=123&tags=AI
+        const threads = await discussionService.getThreads(filters);
         res.status(200).json(threads);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -86,14 +83,14 @@ export const togglePin = async (req, res) => {
 export const createReply = async (req, res) => {
     try {
         const { threadId } = req.params;
-        const { body } = req.body;
+        const { body, parentReplyId } = req.body;
         const userId = req.user.userId;
 
         if (!body) {
             return res.status(400).json({ error: "Reply body is required" });
         }
 
-        const reply = await discussionService.createReply(userId, threadId, body);
+        const reply = await discussionService.createReply(userId, threadId, body, parentReplyId);
         res.status(201).json({ message: "Reply added successfully", reply });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -146,8 +143,9 @@ export const markAsAnswer = async (req, res) => {
 export const upvoteReply = async (req, res) => {
     try {
         const { id } = req.params;
-        const reply = await discussionService.upvoteReply(id);
-        res.status(200).json({ message: "Reply upvoted", reply });
+        const userId = req.user.userId;
+        const reply = await discussionService.upvoteReply(userId, id);
+        res.status(200).json({ message: "Reply upvoted toggled", reply });
     } catch (error) {
         if (error.message.includes("not found")) return res.status(404).json({ error: error.message });
         res.status(500).json({ error: error.message });

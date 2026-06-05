@@ -2,14 +2,14 @@ import * as studySessionService from './study_session.service.js';
 
 export const startSession = async (req, res) => {
     try {
-        const { courseId } = req.body;
+        const { courseId, moduleId } = req.body;
         const userId = req.user.userId;
 
         if (!courseId) {
             return res.status(400).json({ error: "courseId is required" });
         }
 
-        const session = await studySessionService.startSession(userId, courseId);
+        const session = await studySessionService.startSession(userId, courseId, moduleId);
         res.status(201).json({ message: "Study session started", session });
     } catch (error) {
         res.status(500).json({ error: error.message });

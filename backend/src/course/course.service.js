@@ -8,7 +8,7 @@ const generateSlug = (title) => {
 };
 
 export const createCourse = async (userId, courseData) => {
-    const { title, description, level, tags, thumbnailUrl, price, currency } = courseData;
+    const { title, description, learningOutcomes, level, tags, thumbnailUrl, accentColor, price, currency } = courseData;
     const slug = generateSlug(title);
 
     const tagConnections = Array.isArray(tags) ? tags.map(tagName => ({
@@ -25,6 +25,7 @@ export const createCourse = async (userId, courseData) => {
             title,
             slug,
             description,
+            learningOutcomes: Array.isArray(learningOutcomes) ? learningOutcomes : [],
             level: level || 'BEGINNER',
             price: price ? parseFloat(price) : 0.00,
             currency: currency || 'USD',
@@ -32,6 +33,7 @@ export const createCourse = async (userId, courseData) => {
                 create: tagConnections
             },
             thumbnailUrl,
+            accentColor,
             createdBy: userId,
         },
     });
