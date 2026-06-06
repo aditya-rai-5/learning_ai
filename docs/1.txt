@@ -1,0 +1,71 @@
+Here is a step-by-step roadmap for building out the frontend of your platform, organized by logical phases.
+
+  Phase 1: Foundation & Setup
+  Before building features, set up the architecture so the app scales cleanly.
+
+   1. Initialize the App: Use Vite (npm create vite@latest frontend -- --template react) for a fast development environment.
+   2. Configure Tailwind CSS: Set up Tailwind and add your base theme (colors, typography) into tailwind.config.js. Define your primary accentColor
+      logic here if it's dynamic per course.
+   3. Routing Setup: Install react-router-dom. Set up your main layouts:
+      * PublicLayout (Navbar, Footer).
+      * AuthLayout (Clean, focused screens for Login/Register).
+      * StudentDashboardLayout (Sidebar, Header with Notifications).
+      * CoursePlayerLayout (Distraction-free, video/text player view).
+   4. API Client: Set up an axios instance (or use the native fetch API) configured with an interceptor to automatically attach the JWT token from
+      localStorage to every request.
+
+  Phase 2: Identity & Authentication
+  Get users into the system securely.
+
+   1. Auth Pages: Build the Login and Registration screens.
+   2. Auth Context: Create a React Context (AuthContext) to store the current user's profile and JWT token globally. This will control protected
+      routes.
+   3. Role-Based Routing: Implement logic to redirect users based on their role (STUDENT, INSTRUCTOR, ADMIN).
+
+  Phase 3: Course Discovery & Dashboard
+  Allow users to find content and see what they own.
+
+   1. Course Catalog (Home): Build a grid of course cards fetching from GET /api/courses. Add filtering/searching by tags or level.
+   2. Course Details Page: A landing page for a specific course showing its description, learning outcomes, syllabus (modules list), and an "Enroll"
+      button.
+   3. Student Dashboard: Build a view hitting GET /api/enrollments so users can see the courses they own and a progress bar for each.
+
+  Phase 4: The Core Learning Experience (The "Player")
+  This is where the user spends the most time.
+
+   1. Course Player UI: A two-pane layout. A sidebar on the left listing all modules, and a main content area on the right.
+   2. Module Content View: Handle rendering different content types (TEXT, VIDEO).
+   3. Progress Tracking: Hook up the "Mark as Complete" buttons to hit POST /api/enrollments/:courseId/progress/:moduleId.
+   4. Study Sessions: Trigger POST /api/study-sessions/start when a module is opened, and track time spent.
+
+  Phase 5: The "Killer Feature" — AI Integration
+  Bring your Groq/Mistral RAG backend to life.
+
+   1. AI Chat Sidebar: Add a collapsible sidebar or a floating action button (FAB) inside the Course Player.
+   2. Chat Interface: Build a standard messaging UI (like ChatGPT).
+   3. Chat Integration: 
+      * Fetch history (GET /api/courses/:courseId/chat).
+      * Send messages (POST /api/courses/:courseId/chat) passing the moduleId and the user's question.
+   4. Feedback Mechanism: Add a small thumbs-up/down UI on AI messages to hit your feedback endpoint.
+
+  Phase 6: Community & Evaluation
+  Flesh out the social and testing aspects.
+
+   1. Discussions (Q&A): Underneath the module content, add a tab for "Q&A" fetching threads from GET /api/threads?moduleId=.... Build nested reply
+      threads.
+   2. Assessments (Quizzes): Build a UI that renders MULTIPLE_CHOICE or TRUE_FALSE questions, stores local state of the user's answers, and finally
+      submits the attempt.
+   3. Certificates: Build a polished page that displays a generated certificate once a course is 100% complete.
+
+  ---
+
+  Recommended Libraries to add to your stack
+  To make your life easier with React and Tailwind, consider these standard tools:
+
+   * State / Data Fetching: React Query (@tanstack/react-query) or SWR. This is crucial. Instead of managing useState and useEffect for every API call,
+     these libraries handle caching, loading states, and refetching automatically.
+   * Icons: Lucide React (beautiful, clean icons that work perfectly with Tailwind).
+   * UI Components: shadcn/ui. It provides accessible, unstyled components (like Dialogs, Dropdowns, Tabs) that you copy-paste into your app and style
+     completely with Tailwind.
+   * Forms: React Hook Form + Zod for schema validation (handling complex Login/Registration/Quiz forms).
+   * Toasts/Notifications: Sonner or React Hot Toast for displaying "Course Enrolled" or "Error" messages.

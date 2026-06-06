@@ -315,7 +315,7 @@ model RagContext {
   versionId  String                       @map("version_id")
   version    ContentVersion               @relation(fields: [versionId], references: [id])
   chunkText  String                       @map("chunk_text")
-  embedding  Unsupported("vector(1024)")? // Using pgvector
+  embedding  Unsupported("vector(256)")? // Using pgvector
   chunkOrder Int                          @map("chunk_order")
   tokenCount Int                          @map("token_count")
 
