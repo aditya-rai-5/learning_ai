@@ -5,6 +5,7 @@ import {
     ArrowLeft, CheckCircle2, PlayCircle, FileText, Code2,
     ChevronLeft, ChevronRight, MessageCircle, X, Bot, Send, User, ThumbsUp, ThumbsDown, Loader2
 } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 const TYPE_ICON = { VIDEO: PlayCircle, TEXT: FileText, CODE: Code2 };
 
@@ -313,6 +314,8 @@ export default function CoursePlayerLayout() {
                 >
                     {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </button>
+
+                <ThemeToggle />
 
                 {/* AI chat toggle */}
                 <button

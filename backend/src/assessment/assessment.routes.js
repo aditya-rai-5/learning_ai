@@ -21,6 +21,9 @@ router.get('/assessments/:assessmentId/instructor', authenticateUser, assessment
 
 // --- STUDENT ENDPOINTS ---
 
+// List assessments for a course or module
+router.get('/courses/:courseId/assessments', authenticateUser, assessmentController.getAssessments);
+
 // Get assessment details (excluding answers)
 router.get('/assessments/:assessmentId', authenticateUser, assessmentController.getAssessmentForStudent);
 

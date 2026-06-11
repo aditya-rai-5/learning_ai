@@ -11,7 +11,8 @@ export const getUserEnrollments = async (userId) => {
                     slug: true,
                     thumbnailUrl: true,
                     level: true,
-                    creator: { select: { name: true } }
+                    creator: { select: { name: true } },
+                    _count: { select: { modules: true } }
                 }
             },
             progress: true // Include progress tracking
@@ -71,7 +72,7 @@ export const updateModuleProgress = async (userId, courseId, moduleId, progressD
 
     if (progressRecord) {
         // Update existing progress
-        return prisma.progressTracking.update({
+        await prisma.progressTracking.update({
             where: { id: progressRecord.id },
             data: {
                 status: status || progressRecord.status,
@@ -81,7 +82,7 @@ export const updateModuleProgress = async (userId, courseId, moduleId, progressD
         });
     } else {
         // Create new progress
-        return prisma.progressTracking.create({
+        await prisma.progressTracking.create({
             data: {
                 enrollmentId: enrollment.id,
                 moduleId: moduleId,
@@ -91,6 +92,29 @@ export const updateModuleProgress = async (userId, courseId, moduleId, progressD
             }
         });
     }
+
+    // Check if course is completed
+    const courseModulesCount = await prisma.module.count({ where: { courseId } });
+    const completedProgressCount = await prisma.progressTracking.count({
+        where: {
+            enrollmentId: enrollment.id,
+            status: 'COMPLETED'
+        }
+    });
+
+    if (courseModulesCount > 0 && completedProgressCount >= courseModulesCount && !enrollment.completedAt) {
+        await prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: { completedAt: new Date() }
+        });
+    }
+
+    return prisma.progressTracking.findFirst({
+        where: {
+            enrollmentId: enrollment.id,
+            moduleId: moduleId
+        }
+    });
 };
 
 export const markCourseCompleted = async (userId, courseId) => {

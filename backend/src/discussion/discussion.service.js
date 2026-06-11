@@ -17,11 +17,17 @@ export const createThread = async (authorId, threadData) => {
 };
 
 export const getThreads = async (filters = {}) => {
-    const { moduleId, courseId, tags } = filters;
+    const { moduleId, courseId, tags, general } = filters;
     const where = {};
     
-    if (moduleId) where.moduleId = moduleId;
-    if (courseId) where.courseId = courseId;
+    if (general === 'true') {
+        where.moduleId = null;
+        where.courseId = null;
+    } else {
+        if (moduleId) where.moduleId = moduleId;
+        if (courseId) where.courseId = courseId;
+    }
+
     if (tags) {
         const tagsArray = Array.isArray(tags) ? tags : tags.split(',');
         where.tags = { hasSome: tagsArray };

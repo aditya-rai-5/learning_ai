@@ -1,0 +1,29 @@
+Here is a step-by-step roadmap for building out the frontend of the platform for the INSTRUCTOR role, organized by logical phases.
+
+Phase 1: Instructor Dashboard & Overview
+Build the landing experience for instructors to monitor their impact.
+1. Dashboard Overview: A summary view displaying key metrics such as total active students, total courses published, and estimated revenue.
+2. Quick Actions: Prominent buttons to "Create New Course" or "Review Q&A".
+
+Phase 2: Course Management
+Allow instructors to create and manage the metadata of their courses.
+1. Course Builder (Settings): A form to create or edit course details including title, description, level, price, tags, and uploading a thumbnail.
+2. Course List: A table or grid view of all courses created by the instructor with their current status (Published, Draft).
+
+Phase 3: Module & Content Builder
+The core curriculum design tools.
+1. Module Manager: A drag-and-drop interface within a course to add, edit, and reorder modules.
+2. Content Editor: 
+   - A rich text editor (e.g., using Quill, TipTap, or a Markdown editor) for TEXT modules.
+   - An input for embedding or uploading videos for VIDEO modules.
+
+Phase 4: Assessments & Evaluation
+Provide tools to test student knowledge.
+1. Quiz Builder: An interface to create an assessment linked to a module.
+2. Question Editor: Ability to add MULTIPLE_CHOICE or TRUE_FALSE questions, define options, and select the correct answer.
+3. Settings: Controls for pass score, time limits, and points per question.
+
+Phase 5: Student Interaction & Analytics
+Help instructors engage with and support their learners.
+1. Course Q&A Moderation: A dedicated view to see all unanswered questions from students across all their courses, allowing them to reply or mark answers.
+2. Student Progress: Analytics showing where students are dropping off, average quiz scores, and course completion rates.

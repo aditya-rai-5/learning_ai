@@ -1,0 +1,28 @@
+Here is a step-by-step roadmap for building out the frontend of the platform for the ADMIN role, organized by logical phases.
+
+Phase 1: System Dashboard & Platform Analytics
+The central hub for monitoring platform health.
+1. Global Analytics: High-level metrics showing total registered users, active enrollments, total courses, and overall platform revenue.
+2. System Alerts: Notifications for reported content or failed system jobs.
+
+Phase 2: User Access & Role Management
+Control who has access to what.
+1. User Directory: A searchable, paginated table of all registered users on the platform.
+2. Role Assignment: The ability to view user details and change their roles (e.g., promoting a STUDENT to INSTRUCTOR, or granting ADMIN privileges).
+3. Access Control: Features to suspend or ban malicious accounts.
+
+Phase 3: Content Moderation & Global Catalog
+Ensure platform quality and standards.
+1. Global Course Management: A view of all courses created by all instructors.
+2. Moderation Tools: The ability to unpublish, flag, or delete courses that violate platform policies.
+3. Global Q&A Moderation: Tools to delete inappropriate community discussions or replies.
+
+Phase 4: Learning Paths Configuration
+Curate the macro-learning experience.
+1. Learning Path Builder: An interface to create new Learning Paths (title, description, tags).
+2. Sequence Editor: A drag-and-drop tool to search the global course catalog and assemble courses into a specific, numbered sequence for a Learning Path.
+
+Phase 5: Financials & Transactions
+Monitor platform economics.
+1. Transaction Ledger: A view of all successful and failed payments (hitting the /api/payments endpoints).
+2. Payouts (Future): Tools to manage or calculate revenue splits for instructors.

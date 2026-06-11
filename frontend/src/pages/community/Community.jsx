@@ -15,7 +15,7 @@ export default function Community() {
 
   const fetchThreads = useCallback(async () => {
     try {
-      const response = await discussionApi.getThreads();
+      const response = await discussionApi.getThreads({ general: 'true' });
       setThreads(Array.isArray(response.data) ? response.data : []);
     } catch {
       setError('Failed to load discussions.');

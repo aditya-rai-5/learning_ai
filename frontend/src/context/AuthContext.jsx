@@ -1,28 +1,25 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import api from '../lib/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    // On mount, check if there's a token and fetch the user profile (if we had a /me endpoint)
-    // Since the backend login/register returns the user object, we can just rely on that for now,
-    // but in a real app you'd want to validate the token on load.
-    useEffect(() => {
+    const [user, setUser] = useState(() => {
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
         if (storedUser && token) {
             try {
-                setUser(JSON.parse(storedUser));
-            } catch (e) {
+                return JSON.parse(storedUser);
+            } catch {
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
             }
         }
-        setLoading(false);
-    }, []);
+        return null;
+    });
+    
+    // We can set loading to false immediately since we check localStorage synchronously
+    const [loading] = useState(false);
 
     const login = async (email, password) => {
         const { data } = await api.post('/auth/login', { email, password });
@@ -53,6 +50,7 @@ export function AuthProvider({ children }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

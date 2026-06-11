@@ -4,7 +4,14 @@ export const getNotifications = async (req, res) => {
     try {
         const userId = req.user.userId;
         const unreadOnly = req.query.unread === 'true';
-        const notifications = await notificationService.getUserNotifications(userId, unreadOnly);
+        const rawNotifications = await notificationService.getUserNotifications(userId, unreadOnly);
+        
+        const notifications = rawNotifications.map(n => ({
+            ...n,
+            message: n.payloadJson?.message || 'New notification',
+            isRead: !!n.readAt
+        }));
+
         res.status(200).json(notifications);
     } catch (error) {
         res.status(500).json({ error: error.message });

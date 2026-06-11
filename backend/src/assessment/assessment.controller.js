@@ -77,6 +77,17 @@ export const getAssessmentForStudent = async (req, res) => {
     }
 };
 
+export const getAssessments = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { moduleId } = req.query;
+        const assessments = await assessmentService.getAssessments(courseId, moduleId);
+        res.status(200).json(assessments);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 export const startAttempt = async (req, res) => {
     try {
         const userId = req.user.userId;

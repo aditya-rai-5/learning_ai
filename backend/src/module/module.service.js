@@ -64,6 +64,27 @@ export const createModule = async (userId, courseId, moduleData) => {
             }
         });
 
+        // Whenever a new module is added, reset course completion status
+        await tx.enrollment.updateMany({
+            where: { courseId },
+            data: { completedAt: null }
+        });
+
+        // Notify enrolled students
+        const enrollments = await tx.enrollment.findMany({ where: { courseId } });
+        if (enrollments.length > 0) {
+            const notificationsData = enrollments.map(e => ({
+                userId: e.userId,
+                type: 'COURSE_UPDATE',
+                payloadJson: {
+                    message: `A new module "${title}" has been added to the course "${course.title}".`,
+                    courseId,
+                    moduleId: newModule.id
+                }
+            }));
+            await tx.notification.createMany({ data: notificationsData });
+        }
+
         return newModule;
     });
 };
@@ -132,6 +153,21 @@ export const updateModule = async (userId, moduleId, updateData) => {
                     createdBy: userId
                 }
             });
+
+            // Notify enrolled students about the content update
+            const enrollments = await tx.enrollment.findMany({ where: { courseId: existingModule.courseId } });
+            if (enrollments.length > 0) {
+                const notificationsData = enrollments.map(e => ({
+                    userId: e.userId,
+                    type: 'COURSE_UPDATE',
+                    payloadJson: {
+                        message: `The module "${updatedModule.title}" in course "${existingModule.course.title}" has been updated.`,
+                        courseId: existingModule.courseId,
+                        moduleId: updatedModule.id
+                    }
+                }));
+                await tx.notification.createMany({ data: notificationsData });
+            }
         }
 
         return updatedModule;

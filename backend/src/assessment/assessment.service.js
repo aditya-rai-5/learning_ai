@@ -15,15 +15,40 @@ export const createAssessment = async (userId, userRole, courseId, moduleId, dat
         if (!module) throw new Error("Module not found or does not belong to this course");
     }
 
-    return prisma.assessment.create({
-        data: {
-            courseId,
-            moduleId: moduleId || null,
-            title: data.title,
-            passScore: data.passScore,
-            maxAttempts: data.maxAttempts,
-            timeLimitS: data.timeLimitS,
+    return prisma.$transaction(async (tx) => {
+        const newAssessment = await tx.assessment.create({
+            data: {
+                courseId,
+                moduleId: moduleId || null,
+                title: data.title,
+                passScore: data.passScore,
+                maxAttempts: data.maxAttempts,
+                timeLimitS: data.timeLimitS,
+            }
+        });
+
+        // Whenever a new assessment is added, reset course completion status
+        await tx.enrollment.updateMany({
+            where: { courseId },
+            data: { completedAt: null }
+        });
+
+        // Notify enrolled students
+        const enrollments = await tx.enrollment.findMany({ where: { courseId } });
+        if (enrollments.length > 0) {
+            const notificationsData = enrollments.map(e => ({
+                userId: e.userId,
+                type: 'COURSE_UPDATE',
+                payloadJson: {
+                    message: `A new assessment "${data.title}" has been added to the course "${course.title}".`,
+                    courseId,
+                    assessmentId: newAssessment.id
+                }
+            }));
+            await tx.notification.createMany({ data: notificationsData });
         }
+
+        return newAssessment;
     });
 };
 
@@ -92,6 +117,15 @@ export const getAssessmentForStudent = async (assessmentId) => {
 
     if (!assessment) throw new Error("Assessment not found");
     return assessment;
+};
+
+export const getAssessments = async (courseId, moduleId) => {
+    const where = { courseId };
+    if (moduleId) where.moduleId = moduleId;
+    return prisma.assessment.findMany({
+        where,
+        include: { _count: { select: { questions: true } } }
+    });
 };
 
 export const startAttempt = async (userId, assessmentId) => {
