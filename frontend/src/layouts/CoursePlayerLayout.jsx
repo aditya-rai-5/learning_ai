@@ -47,6 +47,26 @@ function ModuleSidebar({ open, courseId, currentModuleId, modules, progressList 
                         </Link>
                     )
                 })}
+
+                {/* Completion Section */}
+                {modules.length > 0 && modules.every(m => progressList.find(p => p.moduleId === m.id && p.status === 'COMPLETED')) && (
+                    <Link
+                        to={`/learn/${courseId}`}
+                        className={`flex items-start gap-3 px-4 py-4 mt-2 bg-green-50 dark:bg-green-900/10 hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors border-t border-b border-green-100 dark:border-green-900/20 ${!currentModuleId ? 'bg-green-100 dark:bg-green-900/30 border-r-2 border-green-600' : ''}`}
+                    >
+                        <div className="mt-0.5 shrink-0 text-green-600 dark:text-green-400">
+                            <Bot className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-green-700 dark:text-green-400">
+                                Course Completed!
+                            </p>
+                            <p className="text-[10px] text-green-600 dark:text-green-500 uppercase font-bold tracking-tight">
+                                Claim Certificate
+                            </p>
+                        </div>
+                    </Link>
+                )}
             </nav>
         </aside>
     )
@@ -300,7 +320,7 @@ export default function CoursePlayerLayout() {
                     <span className="text-xs text-gray-400">{completedCount}/{totalCount}</span>
                     <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-[#FFF0E8]0 rounded-full transition-all"
+                            className="h-full bg-[#E97451] rounded-full transition-all"
                             style={{ width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : '0%' }}
                         />
                     </div>

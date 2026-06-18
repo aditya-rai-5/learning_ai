@@ -162,6 +162,23 @@ export default function CourseDetail() {
                         </span>
                     </div>
 
+                    {/* Instructor Info */}
+                    {course.creator && (
+                        <div className="mb-6 flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800 w-fit cursor-pointer hover:border-[#E97451] transition-colors" onClick={() => navigate(`/instructors/${course.creator.id}`)}>
+                            <div className="w-10 h-10 bg-[#E97451] rounded-full overflow-hidden shrink-0 flex items-center justify-center text-white font-bold uppercase">
+                                {course.creator.avatarUrl ? (
+                                    <img src={course.creator.avatarUrl} alt={course.creator.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    course.creator.name.charAt(0)
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Instructor</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-white">{course.creator.name}</p>
+                            </div>
+                        </div>
+                    )}
+
                     <p className="text-gray-700 dark:text-gray-300 text-lg mb-8 leading-relaxed">
                         {course.description}
                     </p>
@@ -186,7 +203,14 @@ export default function CourseDetail() {
                         <div>
                             {enrollError && <p className="text-red-500 text-sm mb-2">{enrollError}</p>}
                         </div>
-                        {isEnrolled ? (
+                        {user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR' ? (
+                            <button 
+                                onClick={() => navigate(`/learn/${course.id}`)}
+                                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+                            >
+                                View Course Content
+                            </button>
+                        ) : isEnrolled ? (
                             <button 
                                 onClick={() => navigate('/dashboard')}
                                 className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-sm transition-colors"

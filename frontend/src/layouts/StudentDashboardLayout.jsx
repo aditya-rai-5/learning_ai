@@ -6,7 +6,7 @@ import api from '../lib/api'
 import {
     BookOpen, LayoutDashboard, GraduationCap, GitBranch,
     MessageSquare, Bookmark, User, Settings, LogOut,
-    Bell, Search, ChevronLeft, ChevronRight, Award, Check
+    Bell, Search, ChevronLeft, ChevronRight, Award, Check, ShieldAlert
 } from 'lucide-react'
 import ThemeToggle from '../components/ThemeToggle'
 
@@ -25,7 +25,7 @@ const BOTTOM_ITEMS = [
 ]
 
 function Sidebar({ collapsed, setCollapsed }) {
-    const { logout } = useAuth()
+    const { logout, user } = useAuth()
     const navigate = useNavigate()
 
     const handleLogout = () => {
@@ -66,6 +66,30 @@ function Sidebar({ collapsed, setCollapsed }) {
 
             {/* Bottom nav */}
             <div className="px-2 py-4 border-t border-gray-800 space-y-1">
+                {user?.role === 'ADMIN' && (
+                    <NavLink
+                        to="/admin/dashboard"
+                        title={collapsed ? 'Admin Mode' : undefined}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-purple-400 hover:bg-purple-900/20`
+                        }
+                    >
+                        <ShieldAlert className="w-5 h-5 shrink-0" />
+                        {!collapsed && <span>Admin Mode</span>}
+                    </NavLink>
+                )}
+                {(user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN') && (
+                    <NavLink
+                        to="/instructor/dashboard"
+                        title={collapsed ? 'Instructor Mode' : undefined}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-[#E97451] hover:bg-[#E97451]/10`
+                        }
+                    >
+                        <LayoutDashboard className="w-5 h-5 shrink-0" />
+                        {!collapsed && <span>Instructor Mode</span>}
+                    </NavLink>
+                )}
                 {BOTTOM_ITEMS.map(({ to, icon: Icon, label }) => (
                     <NavLink
                         key={to}

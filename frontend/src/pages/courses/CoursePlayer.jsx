@@ -316,7 +316,7 @@ function AssessmentTab({ moduleId, courseId }) {
     const { data: assessments, isLoading } = useQuery({
         queryKey: ['assessments', moduleId],
         queryFn: async () => {
-            const res = await api.get(`/assessments/courses/${courseId}/assessments?moduleId=${moduleId}`);
+            const res = await api.get(`/courses/${courseId}/assessments?moduleId=${moduleId}`);
             return res.data;
         },
         enabled: !!moduleId
@@ -376,7 +376,7 @@ function AssessmentRunner({ assessmentId, onBack }) {
     const { data: assessment, isLoading } = useQuery({
         queryKey: ['assessment', assessmentId],
         queryFn: async () => {
-            const res = await api.get(`/assessments/assessments/${assessmentId}`);
+            const res = await api.get(`/assessments/${assessmentId}`);
             return res.data;
         }
     });
@@ -384,7 +384,7 @@ function AssessmentRunner({ assessmentId, onBack }) {
     const handleStart = async () => {
         setLoading(true);
         try {
-            const res = await api.post(`/assessments/assessments/${assessmentId}/attempts`);
+            const res = await api.post(`/assessments/${assessmentId}/attempts`);
             setAttempt(res.data);
         } catch (err) {
             toast.error(err.response?.data?.error || "Failed to start attempt");
@@ -397,7 +397,7 @@ function AssessmentRunner({ assessmentId, onBack }) {
         if (!attempt) return;
         setLoading(true);
         try {
-            const res = await api.post(`/assessments/attempts/${attempt.id}/submit`, { answers });
+            const res = await api.post(`/attempts/${attempt.id}/submit`, { answers });
             setResult(res.data);
             setSubmitted(true);
             toast.success('Assessment submitted!');
@@ -529,12 +529,15 @@ export default function CoursePlayer() {
     const [bookmarked, setBookmarked] = useState(false);
     const sessionRef = useRef(null);
 
-    // Default to the first module if none specified
+    // Default to the first module if none specified, UNLESS course is completed
     useEffect(() => {
         if (!moduleId && modules.length > 0) {
-            navigate(`/learn/${courseId}/module/${modules[0].id}`, { replace: true });
+            const isAllCompleted = modules.every(m => progressList.find(p => p.moduleId === m.id && p.status === 'COMPLETED'));
+            if (!isAllCompleted) {
+                navigate(`/learn/${courseId}/module/${modules[0].id}`, { replace: true });
+            }
         }
-    }, [moduleId, modules, courseId, navigate]);
+    }, [moduleId, modules, courseId, navigate, progressList]);
 
     // Check if current module is bookmarked
     useEffect(() => {
@@ -581,6 +584,39 @@ export default function CoursePlayer() {
     }, [courseId, moduleId]);
 
     const currentModule = modules.find(m => m.id === moduleId);
+    const isAllCompleted = modules.length > 0 && modules.every(m => progressList.find(p => p.moduleId === m.id && p.status === 'COMPLETED'));
+
+    if (!moduleId && isAllCompleted) {
+        return (
+            <div className="flex-1 flex items-center justify-center p-10 bg-gray-50 dark:bg-gray-900/30">
+                <div className="max-w-xl w-full text-center">
+                    <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                        <CheckCircle2 className="w-12 h-12" />
+                    </div>
+                    <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Course Completed!</h2>
+                    <p className="text-gray-600 dark:text-gray-400 text-lg mb-10 leading-relaxed">
+                        Congratulations! You've successfully finished all the modules in <span className="font-bold text-gray-900 dark:text-white">{useOutletContext().course?.title}</span>.
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button 
+                            onClick={() => navigate('/certificates')}
+                            className="bg-[#E97451] text-white px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Star className="w-5 h-5 fill-current" />
+                            Claim Your Certificate
+                        </button>
+                        <button 
+                            onClick={() => navigate('/dashboard')}
+                            className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                        >
+                            Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!currentModule) {
         return (
@@ -723,17 +759,27 @@ export default function CoursePlayer() {
                         <div className="max-w-3xl mx-auto">
                             {currentModule.contentType === 'VIDEO' ? (
                                 <div className="mb-8 rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center border border-gray-200 dark:border-gray-800 shadow-sm">
-                                    {currentModule.body.includes('<iframe') ? (
-                                        <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: currentModule.body }} />
-                                    ) : currentModule.body.startsWith('http') ? (
-                                        <video src={currentModule.body} controls className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="text-center text-gray-500 flex flex-col items-center">
-                                            <PlayCircle className="w-16 h-16 mb-4 text-gray-700" />
-                                            <p>Video Player Placeholder</p>
-                                            <p className="text-xs mt-2 text-gray-600 max-w-md">{currentModule.body}</p>
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        let videoUrl = currentModule.body;
+                                        try {
+                                            const parsed = JSON.parse(currentModule.body);
+                                            videoUrl = parsed.url || videoUrl;
+                                        } catch (e) {}
+
+                                        if (videoUrl.includes('<iframe')) {
+                                            return <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: videoUrl }} />;
+                                        } else if (videoUrl.startsWith('http') || videoUrl.startsWith('blob')) {
+                                            return <video src={videoUrl} controls className="w-full h-full object-cover" />;
+                                        } else {
+                                            return (
+                                                <div className="text-center text-gray-500 flex flex-col items-center">
+                                                    <PlayCircle className="w-16 h-16 mb-4 text-gray-700" />
+                                                    <p>Video Player Placeholder</p>
+                                                    <p className="text-xs mt-2 text-gray-600 max-w-md">{videoUrl}</p>
+                                                </div>
+                                            );
+                                        }
+                                    })()}
                                 </div>
                             ) : (
                                 <div className="prose dark:prose-invert prose-stone max-w-none">

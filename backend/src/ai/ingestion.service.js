@@ -86,7 +86,19 @@ export const ingestModule = async (moduleId, expectedCourseId) => {
   }
 
   const latestVersion = module.versions[0];
-  const chunks = chunkText(latestVersion.body);
+  let textToChunk = latestVersion.body;
+
+  if (module.contentType === 'VIDEO') {
+    try {
+      const parsed = JSON.parse(latestVersion.body);
+      textToChunk = parsed.transcript || "";
+    } catch (e) {
+      // Fallback: it might not be JSON yet
+      textToChunk = "";
+    }
+  }
+
+  const chunks = chunkText(textToChunk);
 
   if (chunks.length === 0) throw new Error('Module content produced no chunks after splitting');
 

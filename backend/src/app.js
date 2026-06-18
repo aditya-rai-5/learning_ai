@@ -19,6 +19,9 @@ import discussionRoutes from "./discussion/discussion.routes.js";
 import notificationRoutes from "./notification/notification.routes.js";
 import studySessionRoutes from "./study_session/study_session.routes.js";
 import aiRoutes from "./ai/ai.routes.js";
+import instructorRoutes from "./instructor/instructor.routes.js";
+import uploadRoutes from "./upload/upload.routes.js";
+import adminRoutes from "./admin/admin.routes.js";
 
 const app = express();
 
@@ -39,6 +42,9 @@ app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/study-sessions", studySessionRoutes);
+app.use("/api/instructor", instructorRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/upload", uploadRoutes);
 app.use("/api", assessmentRoutes); // Mount at /api so sub-routes like /assessments and /courses work correctly
 app.use("/api", certificateRoutes); // Mount at /api to support /courses/:courseId/certificates and /certificates/:id
 app.use("/api", learningPathRoutes); // Mount at /api to support /learning-paths

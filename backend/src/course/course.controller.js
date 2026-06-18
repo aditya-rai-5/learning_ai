@@ -7,11 +7,15 @@ export const createCourse = async (req, res) => {
       return res.status(403).json({ error: "Only instructors are authorized to create courses" });
     }
 
-    const { title, description } = req.body;
+    const { title, description, initialModule } = req.body;
     const userId = req.user.userId;
 
     if (!title || !description) {
       return res.status(400).json({ error: "Title and description are required" });
+    }
+    
+    if (!initialModule || !initialModule.title || !initialModule.contentType || !initialModule.body) {
+      return res.status(400).json({ error: "An initial module with title, contentType, and body is required" });
     }
 
     const course = await courseService.createCourse(userId, req.body);
@@ -61,9 +65,10 @@ export const updateCourse = async (req, res) => {
 export const deleteCourse = async (req, res) => {
   try {
     const userId = req.user.userId;
+    const userRole = req.user.role;
     const { id } = req.params;
 
-    await courseService.deleteCourse(userId, id);
+    await courseService.deleteCourse(userId, userRole, id);
     res.status(200).json({ message: "Course deleted successfully" });
   } catch (error) {
     if (error.message.includes("not found") || error.message.includes("Unauthorized")) {

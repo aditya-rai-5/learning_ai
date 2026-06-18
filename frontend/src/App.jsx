@@ -9,6 +9,8 @@ import PublicLayout from './layouts/PublicLayout'
 import AuthLayout from './layouts/AuthLayout'
 import StudentDashboardLayout from './layouts/StudentDashboardLayout'
 import CoursePlayerLayout from './layouts/CoursePlayerLayout'
+import InstructorDashboardLayout from './layouts/InstructorDashboardLayout'
+import AdminDashboardLayout from './layouts/AdminDashboardLayout'
 
 import Home from './pages/Home'
 import Login from './pages/auth/Login'
@@ -23,9 +25,19 @@ import LearningPathDetail from './pages/learning_paths/LearningPathDetail'
 import CourseCatalog from './pages/courses/CourseCatalog'
 import CourseDetail from './pages/courses/CourseDetail'
 import CoursePlayer from './pages/courses/CoursePlayer'
+import InstructorProfile from './pages/courses/InstructorProfile'
 import Community from './pages/community/Community'
 import ThreadDetail from './pages/community/ThreadDetail'
 import NotFound from './pages/NotFound'
+import InstructorDashboard from './pages/instructor/InstructorDashboard'
+import InstructorCourses from './pages/instructor/InstructorCourses'
+import CourseBuilder from './pages/instructor/CourseBuilder'
+import InstructorQA from './pages/instructor/InstructorQA'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminCourses from './pages/admin/AdminCourses'
+import AdminCommunity from './pages/admin/AdminCommunity'
+import AdminNotifications from './pages/admin/AdminNotifications'
 
 const queryClient = new QueryClient()
 
@@ -42,6 +54,7 @@ export default function App() {
             <Route index element={<Home />} />
             <Route path="courses" element={<CourseCatalog />} />
             <Route path="courses/:identifier" element={<CourseDetail />} />
+            <Route path="instructors/:instructorId" element={<InstructorProfile />} />
           </Route>
 
           {/* ── Auth (clean card, guests only) ── */}
@@ -65,6 +78,23 @@ export default function App() {
               <Route path="community" element={<Community />} />
               <Route path="community/:id" element={<ThreadDetail />} />
               <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* Instructor routes */}
+            <Route path="instructor" element={<InstructorDashboardLayout />}>
+              <Route path="dashboard" element={<InstructorDashboard />} />
+              <Route path="courses" element={<InstructorCourses />} />
+              <Route path="courses/:courseId/edit" element={<CourseBuilder />} />
+              <Route path="qa" element={<InstructorQA />} />
+            </Route>
+
+            {/* Admin routes */}
+            <Route path="admin" element={<AdminDashboardLayout />}>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="courses" element={<AdminCourses />} />
+              <Route path="community" element={<AdminCommunity />} />
+              <Route path="notifications" element={<AdminNotifications />} />
             </Route>
 
             {/* Course player (distraction-free) */}

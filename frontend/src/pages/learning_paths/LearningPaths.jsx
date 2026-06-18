@@ -34,8 +34,8 @@ export default function LearningPaths() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {paths?.map((path) => (
-                        <Link 
-                            key={path.id} 
+                        <Link
+                            key={path.id}
                             to={`/learning-paths/${path.id}`}
                             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-[#E97451]/50 transition-all group flex flex-col"
                         >
@@ -48,7 +48,7 @@ export default function LearningPaths() {
                             </div>
                             <div className="p-5 flex-1 flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">{path.description}</p>
-                                
+
                                 <div className="mt-auto">
                                     <div className="flex flex-wrap gap-2 mb-4">
                                         {path.tags?.slice(0, 3).map((tag, i) => (

@@ -78,10 +78,10 @@ export const updateThread = async (userId, threadId, updateData) => {
     });
 };
 
-export const deleteThread = async (userId, threadId) => {
+export const deleteThread = async (userId, userRole, threadId) => {
     const thread = await prisma.discussionThread.findUnique({ where: { id: threadId } });
     if (!thread) throw new Error("Thread not found");
-    if (thread.authorId !== userId) throw new Error("Unauthorized");
+    if (thread.authorId !== userId && userRole !== 'ADMIN') throw new Error("Unauthorized");
 
     return prisma.discussionThread.delete({
         where: { id: threadId }
@@ -124,10 +124,10 @@ export const updateReply = async (userId, replyId, body) => {
     });
 };
 
-export const deleteReply = async (userId, replyId) => {
+export const deleteReply = async (userId, userRole, replyId) => {
     const reply = await prisma.discussionReply.findUnique({ where: { id: replyId } });
     if (!reply) throw new Error("Reply not found");
-    if (reply.authorId !== userId) throw new Error("Unauthorized");
+    if (reply.authorId !== userId && userRole !== 'ADMIN') throw new Error("Unauthorized");
 
     return prisma.discussionReply.delete({
         where: { id: replyId }

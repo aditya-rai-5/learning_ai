@@ -8,7 +8,7 @@ const generateSlug = (title) => {
 };
 
 export const createCourse = async (userId, courseData) => {
-    const { title, description, learningOutcomes, level, tags, thumbnailUrl, accentColor, price, currency } = courseData;
+    const { title, description, learningOutcomes, level, tags, thumbnailUrl, accentColor, price, currency, initialModule } = courseData;
     const slug = generateSlug(title);
 
     const tagConnections = Array.isArray(tags) ? tags.map(tagName => ({
@@ -19,6 +19,18 @@ export const createCourse = async (userId, courseData) => {
             }
         }
     })) : [];
+
+    const moduleData = initialModule ? {
+        modules: {
+            create: [{
+                title: initialModule.title,
+                contentType: initialModule.contentType || 'TEXT',
+                body: initialModule.body,
+                durationS: initialModule.durationS || 0,
+                order: 1
+            }]
+        }
+    } : {};
 
     return prisma.course.create({
         data: {
@@ -35,6 +47,7 @@ export const createCourse = async (userId, courseData) => {
             thumbnailUrl,
             accentColor,
             createdBy: userId,
+            ...moduleData
         },
     });
 };
@@ -121,13 +134,13 @@ export const updateCourse = async (userId, courseId, updateData) => {
     });
 };
 
-export const deleteCourse = async (userId, courseId) => {
+export const deleteCourse = async (userId, userRole, courseId) => {
     const course = await prisma.course.findUnique({ where: { id: courseId } });
 
     if (!course) {
         throw new Error("Course not found");
     }
-    if (course.createdBy !== userId) {
+    if (course.createdBy !== userId && userRole !== 'ADMIN') {
         throw new Error("Unauthorized to delete this course");
     }
 

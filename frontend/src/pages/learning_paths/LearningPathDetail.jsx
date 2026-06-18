@@ -28,13 +28,13 @@ export default function LearningPathDetail() {
     // Check progress
     let enrolledCoursesCount = 0;
     let completedCoursesCount = 0;
-    
+
     const coursesWithStatus = path.courses.map(pc => {
         const enrollment = enrollments?.find(e => e.courseId === pc.courseId);
         const isCompleted = !!enrollment?.completedAt;
         if (enrollment) enrolledCoursesCount++;
         if (isCompleted) completedCoursesCount++;
-        
+
         return {
             ...pc.course,
             order: pc.order,
@@ -43,8 +43,8 @@ export default function LearningPathDetail() {
         };
     }).sort((a, b) => a.order - b.order);
 
-    const progressPercent = path.courses.length > 0 
-        ? Math.round((completedCoursesCount / path.courses.length) * 100) 
+    const progressPercent = path.courses.length > 0
+        ? Math.round((completedCoursesCount / path.courses.length) * 100)
         : 0;
 
     return (
@@ -63,7 +63,7 @@ export default function LearningPathDetail() {
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{path.title}</h1>
                 <p className="text-gray-600 dark:text-gray-300 text-lg mb-8 leading-relaxed max-w-2xl">{path.description}</p>
-                
+
                 <div className="flex items-center gap-6 border-t border-gray-100 dark:border-gray-800 pt-6">
                     <div>
                         <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Total Courses</p>
@@ -86,12 +86,12 @@ export default function LearningPathDetail() {
             </div>
 
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Course Sequence</h3>
-            
+
             <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[1.1rem] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-gray-200 before:via-gray-200 before:to-transparent dark:before:from-gray-800 dark:before:via-gray-800">
                 {coursesWithStatus.map((course, idx) => {
                     // Logic to determine if course is unlocked (e.g., first course is always unlocked, or previous course is completed)
                     const isUnlocked = idx === 0 || coursesWithStatus[idx - 1].isCompleted;
-                    
+
                     return (
                         <div key={course.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                             <div className="flex items-center justify-center w-9 h-9 rounded-full border-4 border-gray-50 dark:border-gray-950 bg-white dark:bg-gray-900 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10">
@@ -103,7 +103,7 @@ export default function LearningPathDetail() {
                                     <Lock className="w-4 h-4 text-gray-300 dark:text-gray-600" />
                                 )}
                             </div>
-                            
+
                             <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm transition-all hover:shadow-md">
                                 <div className="flex items-start justify-between gap-4 mb-2">
                                     <h4 className={`font-bold text-base ${isUnlocked ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'}`}>
@@ -116,16 +116,15 @@ export default function LearningPathDetail() {
                                 <p className={`text-sm line-clamp-2 mb-4 ${isUnlocked ? 'text-gray-500' : 'text-gray-400/50'}`}>
                                     {course.description || "No description provided."}
                                 </p>
-                                
+
                                 {isUnlocked ? (
                                     <div className="flex justify-end">
-                                        <Link 
+                                        <Link
                                             to={`/courses/${course.slug || course.id}`}
-                                            className={`text-sm font-bold flex items-center gap-1 transition-colors ${
-                                                course.isCompleted ? 'text-green-600 hover:text-green-700' : 'text-[#E97451] hover:text-[#D05D3A]'
-                                            }`}
+                                            className={`text-sm font-bold flex items-center gap-1 transition-colors ${course.isCompleted ? 'text-green-600 hover:text-green-700' : 'text-[#E97451] hover:text-[#D05D3A]'
+                                                }`}
                                         >
-                                            {course.isCompleted ? 'Review Course' : course.isEnrolled ? 'Continue' : 'View Details'} 
+                                            {course.isCompleted ? 'Review Course' : course.isEnrolled ? 'Continue' : 'View Details'}
                                             <span aria-hidden="true">&rarr;</span>
                                         </Link>
                                     </div>

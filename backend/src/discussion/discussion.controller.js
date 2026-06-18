@@ -56,7 +56,8 @@ export const deleteThread = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.userId;
-        await discussionService.deleteThread(userId, id);
+        const userRole = req.user.role;
+        await discussionService.deleteThread(userId, userRole, id);
         res.status(200).json({ message: "Thread deleted successfully" });
     } catch (error) {
         if (error.message.includes("not found")) return res.status(404).json({ error: error.message });
@@ -116,8 +117,9 @@ export const deleteReply = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.userId;
+        const userRole = req.user.role;
 
-        await discussionService.deleteReply(userId, id);
+        await discussionService.deleteReply(userId, userRole, id);
         res.status(200).json({ message: "Reply deleted successfully" });
     } catch (error) {
         if (error.message.includes("not found")) return res.status(404).json({ error: error.message });
