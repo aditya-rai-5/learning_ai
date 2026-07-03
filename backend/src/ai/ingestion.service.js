@@ -100,7 +100,14 @@ export const ingestModule = async (moduleId, expectedCourseId) => {
 
   const chunks = chunkText(textToChunk);
 
-  if (chunks.length === 0) throw new Error('Module content produced no chunks after splitting');
+  if (chunks.length === 0) {
+    return {
+      moduleId,
+      versionId:     latestVersion.id,
+      versionNumber: latestVersion.version,
+      chunksCreated: 0,
+    };
+  }
 
   // Wipe existing chunks so re-ingestion is idempotent
   await prisma.$executeRawUnsafe(
@@ -118,7 +125,7 @@ export const ingestModule = async (moduleId, expectedCourseId) => {
       `INSERT INTO rag_context
          (id, module_id, version_id, chunk_text, embedding, chunk_order, token_count)
        VALUES
-         (gen_random_uuid(), $1, $2, $3, $4::vector, $5, $6)`,
+         (gen_random_uuid(), $1, $2, $3, $4::vector(384), $5, $6)`,
       moduleId,
       latestVersion.id,
       chunk.text,

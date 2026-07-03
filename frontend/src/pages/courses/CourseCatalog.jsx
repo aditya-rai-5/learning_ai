@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
+import { Star } from 'lucide-react';
 
 export default function CourseCatalog() {
     const [courses, setCourses] = useState([]);
@@ -82,17 +83,23 @@ export default function CourseCatalog() {
                                     {course.price > 0 ? `$${course.price}` : 'Free'}
                                 </span>
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#E97451] dark:group-hover:text-[#FF855C] transition-colors">
-                                {course.title}
-                            </h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-3 mb-4 flex-1">
-                                {course.description}
-                            </p>
-                            <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                                <span>Instructor: {course.creator?.name || 'Unknown'}</span>
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#E97451] dark:group-hover:text-[#FF855C] transition-colors">
+                                    {course.title}
+                                </h3>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-3 mb-4 flex-1">
+                                    {course.description}
+                                </p>
+                                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-auto">
+                                    <span>Instructor: {course.creator?.name || 'Unknown'}</span>
+                                    {course.reviews && course.reviews.length > 0 && (
+                                        <div className="flex items-center gap-1 font-bold text-gray-900 dark:text-white">
+                                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                            {(course.reviews.reduce((a,r) => a + r.rating, 0) / course.reviews.length).toFixed(1)}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </Link>
+                        </Link>
                 ))}
             </div>
         </div>

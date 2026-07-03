@@ -60,6 +60,9 @@ export const getAllCourses = async () => {
             },
             tags: {
                 include: { tag: true }
+            },
+            reviews: {
+                select: { rating: true }
             }
         },
         orderBy: { createdAt: 'desc' }
@@ -77,7 +80,8 @@ export const getCourseByIdOrSlug = async (identifier) => {
         include: {
             creator: { select: { id: true, name: true, avatarUrl: true } },
             tags: { include: { tag: true } },
-            modules: { orderBy: { order: 'asc' } }
+            modules: { orderBy: { order: 'asc' } },
+            reviews: { select: { rating: true } }
         }
     });
 
@@ -125,13 +129,29 @@ export const updateCourse = async (userId, courseId, updateData) => {
         restUpdateData.price = parseFloat(price);
     }
 
-    return prisma.course.update({
+    const updatedCourse = await prisma.course.update({
         where: { id: courseId },
         data: {
             ...restUpdateData,
             ...tagsUpdate
         },
     });
+
+    // Notify enrolled students about the course details update
+    const enrollments = await prisma.enrollment.findMany({ where: { courseId } });
+    if (enrollments.length > 0) {
+        const notificationsData = enrollments.map(e => ({
+            userId: e.userId,
+            type: 'COURSE_UPDATE',
+            payloadJson: {
+                message: `Course details for "${updatedCourse.title}" have been updated.`,
+                courseId
+            }
+        }));
+        await prisma.notification.createMany({ data: notificationsData });
+    }
+
+    return updatedCourse;
 };
 
 export const deleteCourse = async (userId, userRole, courseId) => {

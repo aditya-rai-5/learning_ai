@@ -60,3 +60,68 @@ export const getPublicProfile = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const getLearningPaths = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const role = req.user.role;
+
+        if (role !== 'INSTRUCTOR' && role !== 'ADMIN') {
+            return res.status(403).json({ error: "Only instructors can access this data" });
+        }
+
+        const paths = await instructorService.getInstructorLearningPaths(userId);
+        res.status(200).json(paths);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getAnalytics = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const role = req.user.role;
+
+        if (role !== 'INSTRUCTOR' && role !== 'ADMIN') {
+            return res.status(403).json({ error: "Only instructors can access this data" });
+        }
+
+        const analytics = await instructorService.getInstructorAnalytics(userId);
+        res.status(200).json(analytics);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getEarnings = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const role = req.user.role;
+
+        if (role !== 'INSTRUCTOR' && role !== 'ADMIN') {
+            return res.status(403).json({ error: "Only instructors can access this data" });
+        }
+
+        const earnings = await instructorService.getInstructorEarnings(userId);
+        res.status(200).json(earnings);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const requestPayout = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const role = req.user.role;
+        const { amount } = req.body;
+
+        if (role !== 'INSTRUCTOR' && role !== 'ADMIN') {
+            return res.status(403).json({ error: "Only instructors can access this data" });
+        }
+
+        const payout = await instructorService.requestPayout(userId, amount);
+        res.status(201).json({ message: "Payout requested successfully", payout });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};

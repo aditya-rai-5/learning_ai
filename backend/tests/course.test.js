@@ -41,7 +41,12 @@ describe('Course Endpoints', () => {
       level: 'BEGINNER',
       price: 10.99,
       tags: ['test', 'vitest'],
-      accentColor: '#1565c0'
+      accentColor: '#1565c0',
+      initialModule: {
+        title: 'Introduction',
+        contentType: 'VIDEO',
+        body: 'intro.mp4'
+      }
     };
 
     const res = await request(app)

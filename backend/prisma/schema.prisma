@@ -38,6 +38,7 @@ model User {
   replyUpvotes       ReplyUpvote[]
   studentPayments    Payment[]           @relation("StudentPayments")
   instructorPayments Payment[]           @relation("InstructorPayments")
+  payoutRequests     PayoutRequest[]     @relation("InstructorPayouts")
 
   @@map("users")
 }
@@ -315,7 +316,7 @@ model RagContext {
   versionId  String                       @map("version_id")
   version    ContentVersion               @relation(fields: [versionId], references: [id])
   chunkText  String                       @map("chunk_text")
-  embedding  Unsupported("vector(256)")? // Using pgvector
+  embedding  Unsupported("vector(384)")? // Using pgvector
   chunkOrder Int                          @map("chunk_order")
   tokenCount Int                          @map("token_count")
 
@@ -482,4 +483,16 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   REFUNDED
+}
+
+model PayoutRequest {
+  id           String   @id @default(uuid())
+  instructorId String   @map("instructor_id")
+  instructor   User     @relation("InstructorPayouts", fields: [instructorId], references: [id])
+  amount       Decimal  @db.Decimal(10, 2)
+  status       String   @default("PENDING") // PENDING, PROCESSED, REJECTED
+  createdAt    DateTime @default(now()) @map("created_at")
+  processedAt  DateTime? @map("processed_at")
+
+  @@map("payout_requests")
 }

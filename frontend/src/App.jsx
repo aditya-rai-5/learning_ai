@@ -32,12 +32,17 @@ import NotFound from './pages/NotFound'
 import InstructorDashboard from './pages/instructor/InstructorDashboard'
 import InstructorCourses from './pages/instructor/InstructorCourses'
 import CourseBuilder from './pages/instructor/CourseBuilder'
+import InstructorLearningPaths from './pages/instructor/InstructorLearningPaths'
+import LearningPathBuilder from './pages/instructor/LearningPathBuilder'
+import InstructorAnalytics from './pages/instructor/InstructorAnalytics'
+import InstructorEarnings from './pages/instructor/InstructorEarnings'
 import InstructorQA from './pages/instructor/InstructorQA'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminCourses from './pages/admin/AdminCourses'
 import AdminCommunity from './pages/admin/AdminCommunity'
 import AdminNotifications from './pages/admin/AdminNotifications'
+import AdminPayouts from './pages/admin/AdminPayouts'
 
 const queryClient = new QueryClient()
 
@@ -84,7 +89,13 @@ export default function App() {
             <Route path="instructor" element={<InstructorDashboardLayout />}>
               <Route path="dashboard" element={<InstructorDashboard />} />
               <Route path="courses" element={<InstructorCourses />} />
+              <Route path="courses/new" element={<CourseBuilder />} />
               <Route path="courses/:courseId/edit" element={<CourseBuilder />} />
+              <Route path="learning-paths" element={<InstructorLearningPaths />} />
+              <Route path="learning-paths/new" element={<LearningPathBuilder />} />
+              <Route path="learning-paths/:pathId/edit" element={<LearningPathBuilder />} />
+              <Route path="analytics" element={<InstructorAnalytics />} />
+              <Route path="earnings" element={<InstructorEarnings />} />
               <Route path="qa" element={<InstructorQA />} />
             </Route>
 
@@ -95,6 +106,7 @@ export default function App() {
               <Route path="courses" element={<AdminCourses />} />
               <Route path="community" element={<AdminCommunity />} />
               <Route path="notifications" element={<AdminNotifications />} />
+              <Route path="payouts" element={<AdminPayouts />} />
             </Route>
 
             {/* Course player (distraction-free) */}

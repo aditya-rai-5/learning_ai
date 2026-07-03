@@ -1,4 +1,6 @@
 import prisma from '../config/db.config.js';
+import { signModuleBody } from '../utils/s3.utils.js';
+import * as userSkillService from '../user_skill/user_skill.service.js';
 
 export const getUserEnrollments = async (userId) => {
     return prisma.enrollment.findMany({
@@ -35,7 +37,39 @@ export const getEnrollmentByCourseId = async (userId, courseId) => {
     });
 
     if (!enrollment) {
+        // Check if user is the course creator or an admin
+        const course = await prisma.course.findUnique({
+            where: { id: courseId },
+            include: { modules: { orderBy: { order: 'asc' } } }
+        });
+        
+        if (!course) {
+            throw new Error("Course not found");
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        
+        if (course.createdBy === userId || user?.role === 'ADMIN') {
+            if (course.modules) {
+                course.modules = await Promise.all(course.modules.map(m => signModuleBody(m)));
+            }
+            // Return a mock enrollment for instructors/admins to view the course
+            return {
+                id: 'mock-enrollment',
+                userId,
+                courseId,
+                course,
+                progress: [],
+                enrolledAt: new Date(),
+                completedAt: null
+            };
+        }
+
         throw new Error("Enrollment not found");
+    }
+
+    if (enrollment.course && enrollment.course.modules) {
+        enrollment.course.modules = await Promise.all(enrollment.course.modules.map(m => signModuleBody(m)));
     }
 
     return enrollment;
@@ -107,6 +141,19 @@ export const updateModuleProgress = async (userId, courseId, moduleId, progressD
             where: { id: enrollment.id },
             data: { completedAt: new Date() }
         });
+
+        // Award skills from course tags
+        const courseWithTags = await prisma.course.findUnique({
+            where: { id: courseId },
+            include: { tags: { include: { tag: true } } }
+        });
+
+        if (courseWithTags?.tags) {
+            for (const courseTag of courseWithTags.tags) {
+                // Award 1 proficiency point for each tag on completion
+                await userSkillService.addUserSkill(userId, courseTag.tag.name, 1);
+            }
+        }
     }
 
     return prisma.progressTracking.findFirst({
@@ -128,6 +175,18 @@ export const markCourseCompleted = async (userId, courseId) => {
 
     // Optional: Check if all modules have a 'COMPLETED' status in ProgressTracking before allowing this.
     
+    // Award skills
+    const courseWithTags = await prisma.course.findUnique({
+        where: { id: courseId },
+        include: { tags: { include: { tag: true } } }
+    });
+
+    if (courseWithTags?.tags && !enrollment.completedAt) {
+        for (const courseTag of courseWithTags.tags) {
+            await userSkillService.addUserSkill(userId, courseTag.tag.name, 1);
+        }
+    }
+
     return prisma.enrollment.update({
         where: { id: enrollment.id },
         data: { completedAt: new Date() }

@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
     LayoutDashboard, Users, BookOpen, MessageSquare, Bell, LogOut,
-    Search, ChevronLeft, ChevronRight, Settings, ShieldAlert
+    Search, ChevronLeft, ChevronRight, Settings, ShieldAlert, DollarSign
 } from 'lucide-react'
 import ThemeToggle from '../components/ThemeToggle'
 
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
     { to: '/admin/courses', icon: BookOpen, label: 'Course Catalog' },
     { to: '/admin/community', icon: MessageSquare, label: 'Community Mods' },
     { to: '/admin/notifications', icon: Bell, label: 'System Alerts' },
+    { to: '/admin/payouts', icon: DollarSign, label: 'Payout Requests' },
 ]
 
 function Sidebar({ collapsed, setCollapsed }) {

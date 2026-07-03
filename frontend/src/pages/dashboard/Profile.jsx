@@ -4,6 +4,7 @@ import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { User, Award, Loader2, Plus, Trash2, Mail, Calendar, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import SkillsMatrix from '../../components/SkillsMatrix';
 
 export default function Profile() {
     const { user } = useAuth();
@@ -85,6 +86,10 @@ export default function Profile() {
 
                 {/* Right Column: Skills */}
                 <div className="lg:col-span-2 space-y-8">
+                    
+                    {/* Visual Skills Matrix */}
+                    <SkillsMatrix />
+
                     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center gap-2 mb-6">
                             <Award className="w-6 h-6 text-[#E97451]" />

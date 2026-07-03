@@ -21,13 +21,17 @@ export const enrollOrPurchase = async (req, res) => {
             });
         }
     } catch (error) {
-        if (error.message.includes("Already enrolled") || error.message.includes("payment is already pending") || error.message.includes("Payment already completed")) {
-             return res.status(400).json({ error: error.message });
+        console.error("Enrollment error:", error);
+        
+        const errorMessage = error?.message || "";
+        
+        if (errorMessage.includes("Already enrolled") || errorMessage.includes("payment is already pending") || errorMessage.includes("Payment already completed")) {
+             return res.status(400).json({ error: errorMessage });
         }
-        if (error.message.includes("not found")) {
-             return res.status(404).json({ error: error.message });
+        if (errorMessage.includes("not found")) {
+             return res.status(404).json({ error: errorMessage });
         }
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: errorMessage || "An internal error occurred during enrollment." });
     }
 };
 

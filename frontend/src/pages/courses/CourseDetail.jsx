@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { Star, MessageSquare } from 'lucide-react';
 
 // Helper function to dynamically load the Razorpay script
 const loadRazorpayScript = () => {
@@ -57,6 +59,20 @@ export default function CourseDetail() {
 
         fetchCourseAndEnrollment();
     }, [identifier, user]);
+
+    const { data: reviews = [] } = useQuery({
+        queryKey: ['course-reviews', course?.id],
+        queryFn: async () => {
+            if (!course?.id) return [];
+            const res = await api.get(`/courses/${course.id}/reviews`);
+            return res.data;
+        },
+        enabled: !!course?.id
+    });
+
+    const averageRating = reviews.length > 0 
+        ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+        : 0;
 
     const handleEnroll = async () => {
         if (!user) {
@@ -160,6 +176,13 @@ export default function CourseDetail() {
                         <span className="text-lg font-semibold text-gray-900 dark:text-white">
                             {course.price > 0 ? `$${course.price}` : 'Free'}
                         </span>
+                        {reviews.length > 0 && (
+                            <div className="flex items-center gap-1.5 ml-2">
+                                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                                <span className="font-bold text-gray-900 dark:text-white">{averageRating}</span>
+                                <span className="text-gray-500 text-sm">({reviews.length} reviews)</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Instructor Info */}
@@ -203,7 +226,7 @@ export default function CourseDetail() {
                         <div>
                             {enrollError && <p className="text-red-500 text-sm mb-2">{enrollError}</p>}
                         </div>
-                        {user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR' ? (
+                        {user?.role === 'ADMIN' || (user?.role === 'INSTRUCTOR' && course.creator?.id === user?.id) || (user?.role === 'INSTRUCTOR' && course.createdBy === user?.userId) ? (
                             <button 
                                 onClick={() => navigate(`/learn/${course.id}`)}
                                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
@@ -254,6 +277,55 @@ export default function CourseDetail() {
                     </p>
                  </div>
             )}
+
+            {/* Student Reviews Section */}
+            <div className="mt-12">
+                <div className="flex items-center gap-3 mb-8">
+                    <MessageSquare className="w-6 h-6 text-[#E97451]" />
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Student Reviews</h2>
+                </div>
+
+                {reviews.length === 0 ? (
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-8 text-center border border-gray-200 dark:border-gray-700">
+                        <p className="text-gray-500 dark:text-gray-400">No reviews yet. Be the first to review this course!</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-6">
+                        {reviews.map((review) => (
+                            <div key={review.id} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center overflow-hidden">
+                                            {review.user?.avatarUrl ? (
+                                                <img src={review.user.avatarUrl} alt={review.user.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-indigo-600 dark:text-indigo-400 font-bold uppercase">
+                                                    {review.user?.name?.charAt(0) || 'A'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-gray-900 dark:text-white">{review.user?.name || 'Anonymous'}</p>
+                                            <p className="text-xs text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star 
+                                                key={star}
+                                                className={`w-4 h-4 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                                {review.body && (
+                                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{review.body}</p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

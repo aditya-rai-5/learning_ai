@@ -5,13 +5,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import {
     LayoutDashboard, BookOpen, MessageSquare, Settings, LogOut,
-    Bell, Search, ChevronLeft, ChevronRight, User, PlusCircle, ShieldAlert
+    Bell, Search, ChevronLeft, ChevronRight, User, PlusCircle, ShieldAlert,
+    Map, TrendingUp, DollarSign
 } from 'lucide-react'
 import ThemeToggle from '../components/ThemeToggle'
 
 const NAV_ITEMS = [
     { to: '/instructor/dashboard', icon: LayoutDashboard, label: 'Overview' },
     { to: '/instructor/courses', icon: BookOpen, label: 'My Courses' },
+    { to: '/instructor/learning-paths', icon: Map, label: 'Learning Paths' },
+    { to: '/instructor/analytics', icon: TrendingUp, label: 'Analytics' },
+    { to: '/instructor/earnings', icon: DollarSign, label: 'Earnings' },
     { to: '/instructor/qa', icon: MessageSquare, label: 'Student Q&A' },
 ]
 

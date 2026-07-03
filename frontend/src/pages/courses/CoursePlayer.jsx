@@ -4,10 +4,70 @@ import api, { bookmarkApi } from '../../lib/api';
 import { 
     CheckCircle2, Circle, Bookmark, PlayCircle, 
     MessageSquare, BookOpen, ClipboardList, Loader2,
-    MessageCircle, ThumbsUp, Star, X
+    MessageCircle, ThumbsUp, Star, X, Bot
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import AITutorChat from '../../components/AITutorChat';
+
+// --- Video Player Component ---
+function VideoPlayer({ videoUrl }) {
+    const [signedUrl, setSignedUrl] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!videoUrl) {
+            setLoading(false);
+            return;
+        }
+        if (videoUrl.includes('<iframe') || videoUrl.match(/(?:youtube\.com|youtu\.be)/) || videoUrl.startsWith('blob:')) {
+            setSignedUrl(videoUrl);
+            setLoading(false);
+            return;
+        }
+        
+        api.post('/upload/signed-url', { key: videoUrl }).then(res => {
+            setSignedUrl(res.data.url);
+            setLoading(false);
+        }).catch(err => {
+            console.error("Failed to fetch signed url", err);
+            setSignedUrl(videoUrl); // fallback
+            setLoading(false);
+        });
+    }, [videoUrl]);
+
+    if (loading) return <div className="flex justify-center items-center h-full w-full"><Loader2 className="w-8 h-8 animate-spin text-[#E97451]" /></div>;
+
+    if (signedUrl.includes('<iframe')) {
+        return <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: signedUrl }} />;
+    } 
+    
+    // Handle Youtube Links
+    const ytMatch = signedUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+        return (
+            <iframe 
+                src={`https://www.youtube.com/embed/${ytMatch[1]}`} 
+                className="w-full h-full" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+            ></iframe>
+        );
+    }
+
+    if (signedUrl.startsWith('http') || signedUrl.startsWith('blob') || signedUrl.startsWith('/')) {
+        return <video src={signedUrl} controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} className="w-full h-full object-cover" />;
+    } else {
+        return (
+            <div className="text-center text-gray-500 flex flex-col items-center">
+                <PlayCircle className="w-16 h-16 mb-4 text-gray-700" />
+                <p>Video Not Available</p>
+                <p className="text-xs mt-2 text-gray-600 max-w-md">{signedUrl}</p>
+            </div>
+        );
+    }
+}
+
 
 // --- Discussion Tab Component ---
 
@@ -373,6 +433,8 @@ function AssessmentRunner({ assessmentId, onBack }) {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const [timeLeft, setTimeLeft] = useState(null);
+
     const { data: assessment, isLoading } = useQuery({
         queryKey: ['assessment', assessmentId],
         queryFn: async () => {
@@ -381,11 +443,28 @@ function AssessmentRunner({ assessmentId, onBack }) {
         }
     });
 
+    useEffect(() => {
+        if (attempt && !submitted && timeLeft !== null && timeLeft > 0) {
+            const timer = setInterval(() => {
+                setTimeLeft(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        handleSubmit();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [attempt, submitted, timeLeft]);
+
     const handleStart = async () => {
         setLoading(true);
         try {
             const res = await api.post(`/assessments/${assessmentId}/attempts`);
             setAttempt(res.data);
+            setTimeLeft(assessment.timeLimitS);
         } catch (err) {
             toast.error(err.response?.data?.error || "Failed to start attempt");
         } finally {
@@ -394,7 +473,7 @@ function AssessmentRunner({ assessmentId, onBack }) {
     };
 
     const handleSubmit = async () => {
-        if (!attempt) return;
+        if (!attempt || submitted) return;
         setLoading(true);
         try {
             const res = await api.post(`/attempts/${attempt.id}/submit`, { answers });
@@ -408,20 +487,20 @@ function AssessmentRunner({ assessmentId, onBack }) {
         }
     };
 
-    if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
+    if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-[#E97451]" /></div>;
 
     if (submitted && result) {
         return (
             <div className="max-w-2xl mx-auto p-8 text-center">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${result.passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                    {result.passed ? <CheckCircle2 className="w-10 h-10" /> : <X className="w-10 h-10" />}
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${result.passed ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    {result.passed ? <CheckCircle2 className="w-12 h-12" /> : <X className="w-12 h-12" />}
                 </div>
-                <h3 className="text-2xl font-bold mb-2">{result.passed ? 'Assessment Passed!' : 'Assessment Failed'}</h3>
-                <p className="text-gray-500 mb-6">Your score: <span className="font-bold text-gray-900 dark:text-white">{result.score}</span> / {assessment.questions.reduce((a,b)=>a+b.points, 0)}</p>
+                <h3 className="text-3xl font-bold mb-3">{result.passed ? 'Assessment Passed!' : 'Assessment Failed'}</h3>
+                <p className="text-gray-500 mb-8 text-lg">Your score: <span className="font-bold text-gray-900 dark:text-white text-2xl">{result.score}</span> / {assessment.questions.reduce((a,b)=>a+b.points, 0)}</p>
                 
                 <button 
                     onClick={onBack}
-                    className="bg-[#E97451] text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+                    className="bg-[#E97451] text-white px-8 py-4 rounded-xl font-bold hover:bg-[#D05D3A] transition-all"
                 >
                     Back to Module
                 </button>
@@ -432,43 +511,56 @@ function AssessmentRunner({ assessmentId, onBack }) {
     if (!attempt) {
         return (
             <div className="max-w-2xl mx-auto p-12 text-center">
-                <h3 className="text-2xl font-bold mb-4">{assessment.title}</h3>
-                <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 mb-8">
+                <div className="w-16 h-16 bg-[#FFF0E8] dark:bg-[#E97451]/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-[#E97451]">
+                    <ClipboardList className="w-8 h-8" />
+                </div>
+                <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">{assessment.title}</h3>
+                <p className="text-gray-500 mb-8">Test your knowledge before moving on to the next section.</p>
+                
+                <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm mb-8">
                     <div className="grid grid-cols-3 gap-4">
                         <div className="text-center">
-                            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Questions</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{assessment.questions.length}</p>
+                            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">Questions</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{assessment.questions.length}</p>
                         </div>
                         <div className="text-center border-x border-gray-200 dark:border-gray-800">
-                            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Time Limit</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{Math.round(assessment.timeLimitS / 60)}m</p>
+                            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">Time Limit</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(assessment.timeLimitS / 60)}m</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Pass Score</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{assessment.passScore}</p>
+                            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">Pass Score</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{assessment.passScore}</p>
                         </div>
                     </div>
                 </div>
                 <div className="flex gap-4 justify-center">
-                    <button onClick={onBack} className="px-6 py-2 text-gray-500 font-medium">Cancel</button>
+                    <button onClick={onBack} className="px-8 py-3 text-gray-500 font-medium hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors">Cancel</button>
                     <button 
                         onClick={handleStart}
                         disabled={loading}
-                        className="bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-8 py-2 rounded-lg font-bold hover:scale-105 transition-transform disabled:opacity-50"
+                        className="bg-[#E97451] text-white px-10 py-3 rounded-xl font-bold hover:bg-[#D05D3A] transition-colors disabled:opacity-50"
                     >
-                        {loading ? 'Starting...' : 'I am Ready'}
+                        {loading ? 'Starting...' : 'Start Assessment'}
                     </button>
                 </div>
             </div>
         );
     }
 
+    const formatTime = (seconds) => {
+        if (seconds === null) return '--:--';
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
     return (
         <div className="max-w-3xl mx-auto p-8">
-            <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold">{assessment.title}</h3>
-                <div className="text-sm font-mono bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded">
-                    QUIZ IN PROGRESS
+            <div className="flex items-center justify-between mb-8 sticky top-0 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur py-4 z-10 border-b border-gray-200 dark:border-gray-800">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{assessment.title}</h3>
+                <div className={`text-sm font-mono px-4 py-2 rounded-lg font-bold flex items-center gap-2 ${timeLeft < 60 ? 'bg-red-100 text-red-600 dark:bg-red-900/30' : 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'}`}>
+                    <span>⏱</span>
+                    {formatTime(timeLeft)}
                 </div>
             </div>
 
@@ -527,6 +619,7 @@ export default function CoursePlayer() {
     const [updating, setUpdating] = useState(false);
     const [isBookmarking, setIsBookmarking] = useState(false);
     const [bookmarked, setBookmarked] = useState(false);
+    const [isAITutorOpen, setIsAITutorOpen] = useState(false);
     const sessionRef = useRef(null);
 
     // Default to the first module if none specified, UNLESS course is completed
@@ -671,9 +764,10 @@ export default function CoursePlayer() {
     };
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Module Content Header */}
-            <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-800 shrink-0 bg-white dark:bg-gray-950">
+        <div className="flex h-full w-full relative">
+            <div className="flex flex-col h-full flex-1 min-w-0 transition-all duration-300">
+                {/* Module Content Header */}
+                <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-800 shrink-0 bg-white dark:bg-gray-950">
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -700,6 +794,18 @@ export default function CoursePlayer() {
                             title={bookmarked ? "Remove Bookmark" : "Bookmark Module"}
                         >
                             <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
+                        </button>
+
+                        <button
+                            onClick={() => setIsAITutorOpen(!isAITutorOpen)}
+                            className={`flex items-center gap-2 p-2 rounded-lg transition-colors border ${
+                                isAITutorOpen 
+                                    ? 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-400' 
+                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700'
+                            }`}
+                            title="Ask AI Tutor"
+                        >
+                            <Bot className="w-5 h-5" />
                         </button>
 
                         <button 
@@ -766,19 +872,8 @@ export default function CoursePlayer() {
                                             videoUrl = parsed.url || videoUrl;
                                         } catch (e) {}
 
-                                        if (videoUrl.includes('<iframe')) {
-                                            return <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: videoUrl }} />;
-                                        } else if (videoUrl.startsWith('http') || videoUrl.startsWith('blob')) {
-                                            return <video src={videoUrl} controls className="w-full h-full object-cover" />;
-                                        } else {
-                                            return (
-                                                <div className="text-center text-gray-500 flex flex-col items-center">
-                                                    <PlayCircle className="w-16 h-16 mb-4 text-gray-700" />
-                                                    <p>Video Player Placeholder</p>
-                                                    <p className="text-xs mt-2 text-gray-600 max-w-md">{videoUrl}</p>
-                                                </div>
-                                            );
-                                        }
+                                        if (!videoUrl) return null;
+                                        return <VideoPlayer videoUrl={videoUrl} />;
                                     })()}
                                 </div>
                             ) : (
@@ -796,6 +891,16 @@ export default function CoursePlayer() {
                 
                 {activeTab === 'assessments' && <AssessmentTab moduleId={moduleId} courseId={courseId} />}
             </div>
+            </div>
+
+            {/* AI Tutor Sidebar */}
+            {isAITutorOpen && (
+                <AITutorChat 
+                    courseId={courseId} 
+                    moduleId={moduleId} 
+                    onClose={() => setIsAITutorOpen(false)} 
+                />
+            )}
         </div>
     );
 }

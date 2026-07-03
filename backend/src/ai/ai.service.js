@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import prisma from '../config/db.config.js';
+import crypto from 'crypto';
 import { generateEmbedding, vectorSearch, hybridRankChunks } from './rag.service.js';
 
 // Groq's API is OpenAI-compatible — same SDK, just a different baseURL and key.

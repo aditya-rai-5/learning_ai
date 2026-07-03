@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ModuleManagement from './ModuleManagement';
+import AssessmentManagement from './AssessmentManagement';
+import AiSettingsManager from './AiSettingsManager';
 
 export default function CourseBuilder() {
     const { courseId } = useParams();
-    const isNew = courseId === 'new';
+    const isNew = !courseId || courseId === 'new';
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [isUploading, setIsUploading] = useState(false);
 
     const [form, setForm] = useState({
         title: '',
@@ -19,7 +22,13 @@ export default function CourseBuilder() {
         price: 0,
         thumbnailUrl: '',
         tags: '',
-        learningOutcomes: ''
+        learningOutcomes: '',
+        initialModuleTitle: '',
+        initialModuleDurationS: 0,
+        initialModuleType: 'TEXT',
+        initialModuleVideoUrl: '',
+        initialModuleTranscript: '',
+        initialModuleBody: ''
     });
 
     const { data: course, isLoading } = useQuery({
@@ -55,8 +64,22 @@ export default function CourseBuilder() {
             };
 
             if (isNew) {
+                payload.initialModule = {
+                    title: data.initialModuleTitle,
+                    contentType: data.initialModuleType,
+                    body: data.finalBody,
+                    durationS: parseInt(data.initialModuleDurationS) || 0
+                };
                 return api.post('/courses', payload);
             } else {
+                delete payload.initialModuleTitle;
+                delete payload.initialModuleType;
+                delete payload.initialModuleBody;
+                delete payload.initialModuleVideoFile;
+                delete payload.initialModuleVideoUrl;
+                delete payload.initialModuleTranscript;
+                delete payload.initialModuleDurationS;
+                delete payload.finalBody;
                 return api.put(`/courses/${courseId}`, payload);
             }
         },
@@ -85,9 +108,40 @@ export default function CourseBuilder() {
         }
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        saveMutation.mutate(form);
+        
+        let finalBody = form.initialModuleBody;
+
+        if (isNew && form.initialModuleType === 'VIDEO') {
+            let uploadedUrl = form.initialModuleVideoUrl;
+            
+            if (form.initialModuleVideoFile) {
+                setIsUploading(true);
+                const formData = new FormData();
+                formData.append('file', form.initialModuleVideoFile);
+                try {
+                    const res = await api.post('/upload/video', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    uploadedUrl = res.data.url;
+                } catch (err) {
+                    toast.error('Failed to upload video');
+                    setIsUploading(false);
+                    return;
+                }
+                setIsUploading(false);
+            }
+
+            if (!uploadedUrl) {
+                toast.error('Please provide a video URL or upload a file');
+                return;
+            }
+
+            finalBody = JSON.stringify({ url: uploadedUrl, transcript: form.initialModuleTranscript });
+        }
+
+        saveMutation.mutate({ ...form, finalBody });
     };
 
     if (isLoading && !isNew) return <div className="p-12 text-center text-gray-500">Loading course details...</div>;
@@ -206,15 +260,26 @@ export default function CourseBuilder() {
                             <p className="text-sm text-gray-500 mb-6">Every course must have at least one module to get started. You can add more later.</p>
                             
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Module Title</label>
-                                    <input
-                                        type="text" required
-                                        value={form.initialModuleTitle}
-                                        onChange={e => setForm({...form, initialModuleTitle: e.target.value})}
-                                        placeholder="e.g. Introduction"
-                                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E97451] outline-none"
-                                    />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Module Title</label>
+                                        <input
+                                            type="text" required
+                                            value={form.initialModuleTitle}
+                                            onChange={e => setForm({...form, initialModuleTitle: e.target.value})}
+                                            placeholder="e.g. Introduction"
+                                            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E97451] outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Duration (seconds)</label>
+                                        <input
+                                            type="number" min="0" required
+                                            value={form.initialModuleDurationS}
+                                            onChange={e => setForm({...form, initialModuleDurationS: e.target.value})}
+                                            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E97451] outline-none"
+                                        />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Content Type</label>
@@ -228,16 +293,41 @@ export default function CourseBuilder() {
                                         <option value="CODE">Code</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Content Body</label>
-                                    <textarea
-                                        required rows={4}
-                                        value={form.initialModuleBody}
-                                        onChange={e => setForm({...form, initialModuleBody: e.target.value})}
-                                        placeholder={form.initialModuleType === 'VIDEO' ? 'Enter video URL or JSON config' : 'Enter content...'}
-                                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E97451] outline-none font-mono"
-                                    />
-                                </div>
+                                
+                                {form.initialModuleType === 'VIDEO' ? (
+                                    <div className="space-y-4 border border-gray-100 dark:border-gray-800 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Video Upload</label>
+                                            <input
+                                                type="file" accept="video/*"
+                                                onChange={e => setForm({...form, initialModuleVideoFile: e.target.files[0]})}
+                                                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#E97451] file:text-white hover:file:bg-[#D05D3A]"
+                                            />
+                                            {form.initialModuleVideoUrl && !form.initialModuleVideoFile && <p className="text-xs text-gray-500 mt-2">Current Video URL: {form.initialModuleVideoUrl}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Transcript (For AI Q&A)</label>
+                                            <textarea
+                                                rows={4}
+                                                value={form.initialModuleTranscript}
+                                                onChange={e => setForm({...form, initialModuleTranscript: e.target.value})}
+                                                placeholder="Paste the video transcript here for AI ingestion..."
+                                                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E97451] outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Content Body</label>
+                                        <textarea
+                                            required rows={4}
+                                            value={form.initialModuleBody}
+                                            onChange={e => setForm({...form, initialModuleBody: e.target.value})}
+                                            placeholder={form.initialModuleType === 'CODE' ? 'Write code here...' : 'Write text content here...'}
+                                            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E97451] outline-none font-mono"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -245,18 +335,22 @@ export default function CourseBuilder() {
                     <div className="flex justify-end border-t border-gray-100 dark:border-gray-800 pt-6">
                         <button
                             type="submit"
-                            disabled={saveMutation.isLoading}
+                            disabled={saveMutation.isLoading || isUploading}
                             className="flex items-center gap-2 bg-[#E97451] hover:bg-[#D05D3A] text-white px-8 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
                         >
-                            <Save className="w-5 h-5" />
-                            {saveMutation.isLoading ? 'Saving...' : 'Save Course Details'}
+                            {(saveMutation.isLoading || isUploading) ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                            {(saveMutation.isLoading || isUploading) ? (isUploading ? 'Uploading Video...' : 'Saving Course...') : 'Save Course Details'}
                         </button>
                     </div>
                 </form>
             </div>
             
             {!isNew && (
-                <ModuleManagement courseId={courseId} />
+                <div className="space-y-12">
+                    <ModuleManagement courseId={courseId} />
+                    <AssessmentManagement courseId={courseId} />
+                    <AiSettingsManager courseId={courseId} />
+                </div>
             )}
         </div>
     );

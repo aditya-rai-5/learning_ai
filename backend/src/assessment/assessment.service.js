@@ -95,6 +95,66 @@ export const getAssessmentForInstructor = async (userId, userRole, assessmentId)
     return assessmentData;
 };
 
+export const updateAssessment = async (userId, userRole, assessmentId, data) => {
+    const assessment = await prisma.assessment.findUnique({
+        where: { id: assessmentId },
+        include: { course: { select: { createdBy: true } } }
+    });
+
+    if (!assessment) throw new Error("Assessment not found");
+
+    if (userRole !== 'ADMIN' && assessment.course.createdBy !== userId) {
+        throw new Error("Unauthorized to modify this assessment");
+    }
+
+    return prisma.assessment.update({
+        where: { id: assessmentId },
+        data: {
+            title: data.title,
+            passScore: data.passScore,
+            maxAttempts: data.maxAttempts,
+            timeLimitS: data.timeLimitS,
+        }
+    });
+};
+
+export const deleteAssessment = async (userId, userRole, assessmentId) => {
+    const assessment = await prisma.assessment.findUnique({
+        where: { id: assessmentId },
+        include: { course: { select: { createdBy: true } } }
+    });
+
+    if (!assessment) throw new Error("Assessment not found");
+
+    if (userRole !== 'ADMIN' && assessment.course.createdBy !== userId) {
+        throw new Error("Unauthorized to modify this assessment");
+    }
+
+    // Assessment is set to Cascade delete its questions and attempts in DB (if schema is configured)
+    // If not, Prisma will throw unless we delete manually.
+    // Assuming onDelete: Cascade is present on questions and attempts
+    return prisma.assessment.delete({
+        where: { id: assessmentId }
+    });
+};
+
+export const deleteQuestion = async (userId, userRole, questionId) => {
+    const question = await prisma.assessmentQuestion.findUnique({
+        where: { id: questionId },
+        include: { assessment: { include: { course: { select: { createdBy: true } } } } }
+    });
+
+    if (!question) throw new Error("Question not found");
+
+    if (userRole !== 'ADMIN' && question.assessment.course.createdBy !== userId) {
+        throw new Error("Unauthorized to modify this assessment");
+    }
+
+    return prisma.assessmentQuestion.delete({
+        where: { id: questionId }
+    });
+};
+
 
 // --- STUDENT OPERATIONS ---
 

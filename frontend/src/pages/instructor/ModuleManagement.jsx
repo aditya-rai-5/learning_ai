@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
-import { Plus, Edit2, Trash2, Video, FileText, Code, Save, X, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Video, FileText, Code, Save, X, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ModuleManagement({ courseId }) {
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [currentModule, setCurrentModule] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const [form, setForm] = useState({
         title: '',
@@ -55,6 +56,18 @@ export default function ModuleManagement({ courseId }) {
         }
     });
 
+    const ingestMutation = useMutation({
+        mutationFn: async (moduleId) => {
+            return api.post(`/courses/${courseId}/ingest`, { moduleId });
+        },
+        onSuccess: () => {
+            toast.success('Module ingested for AI successfully!');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.error || 'Failed to ingest module');
+        }
+    });
+
     const handleEdit = (mod) => {
         setCurrentModule(mod);
         let parsedVideoUrl = '';
@@ -92,6 +105,7 @@ export default function ModuleManagement({ courseId }) {
             let uploadedUrl = form.videoUrl;
             
             if (form.videoFile) {
+                setIsUploading(true);
                 const formData = new FormData();
                 formData.append('file', form.videoFile);
                 try {
@@ -101,8 +115,10 @@ export default function ModuleManagement({ courseId }) {
                     uploadedUrl = res.data.url;
                 } catch (err) {
                     toast.error('Failed to upload video');
+                    setIsUploading(false);
                     return;
                 }
+                setIsUploading(false);
             }
 
             if (!uploadedUrl) {
@@ -228,11 +244,11 @@ export default function ModuleManagement({ courseId }) {
 
                         <div className="flex justify-end pt-4">
                             <button
-                                type="submit" disabled={saveMutation.isLoading}
+                                type="submit" disabled={saveMutation.isLoading || isUploading}
                                 className="flex items-center gap-2 bg-[#E97451] text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-[#D05D3A] disabled:opacity-50"
                             >
-                                {saveMutation.isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                Save Module
+                                {(saveMutation.isLoading || isUploading) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                {(saveMutation.isLoading || isUploading) ? (isUploading ? 'Uploading Video...' : 'Saving...') : 'Save Module'}
                             </button>
                         </div>
                     </form>
@@ -261,6 +277,14 @@ export default function ModuleManagement({ courseId }) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => ingestMutation.mutate(mod.id)}
+                                        disabled={ingestMutation.isLoading}
+                                        title="Ingest to AI"
+                                        className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                    </button>
                                     <button 
                                         onClick={() => handleEdit(mod)}
                                         className="p-2 text-gray-500 hover:text-[#E97451] hover:bg-[#FFF0E8] dark:hover:bg-[#8A3324]/30 rounded-lg transition-colors"

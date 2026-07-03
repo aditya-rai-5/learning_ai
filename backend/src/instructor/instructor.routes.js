@@ -12,6 +12,10 @@ router.use(authenticateUser);
 
 router.get('/overview', instructorController.getOverview);
 router.get('/courses', instructorController.getMyCourses);
+router.get('/learning-paths', instructorController.getLearningPaths);
+router.get('/analytics', instructorController.getAnalytics);
+router.get('/earnings', instructorController.getEarnings);
+router.post('/payouts', instructorController.requestPayout);
 router.get('/qa', instructorController.getQA);
 
 export default router;

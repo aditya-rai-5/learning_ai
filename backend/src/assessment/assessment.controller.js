@@ -46,18 +46,56 @@ export const addQuestion = async (req, res) => {
 
 export const getAssessmentForInstructor = async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const userRole = req.user.role;
         const { assessmentId } = req.params;
-        const assessment = await assessmentService.getAssessmentForInstructor(userId, userRole, assessmentId);
+        const { userId, role } = req.user;
+
+        const assessment = await assessmentService.getAssessmentForInstructor(userId, role, assessmentId);
         res.status(200).json(assessment);
     } catch (error) {
-        if (error.message === "Assessment not found") {
-            return res.status(404).json({ error: error.message });
-        }
-        if (error.message.includes("Unauthorized")) {
-            return res.status(403).json({ error: error.message });
-        }
+        if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
+        if (error.message.includes('Unauthorized')) return res.status(403).json({ error: error.message });
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const updateAssessment = async (req, res) => {
+    try {
+        const { assessmentId } = req.params;
+        const { userId, role } = req.user;
+
+        const assessment = await assessmentService.updateAssessment(userId, role, assessmentId, req.body);
+        res.status(200).json({ message: "Assessment updated successfully", assessment });
+    } catch (error) {
+        if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
+        if (error.message.includes('Unauthorized')) return res.status(403).json({ error: error.message });
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const deleteAssessment = async (req, res) => {
+    try {
+        const { assessmentId } = req.params;
+        const { userId, role } = req.user;
+
+        await assessmentService.deleteAssessment(userId, role, assessmentId);
+        res.status(200).json({ message: "Assessment deleted successfully" });
+    } catch (error) {
+        if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
+        if (error.message.includes('Unauthorized')) return res.status(403).json({ error: error.message });
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const deleteQuestion = async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        const { userId, role } = req.user;
+
+        await assessmentService.deleteQuestion(userId, role, questionId);
+        res.status(200).json({ message: "Question deleted successfully" });
+    } catch (error) {
+        if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
+        if (error.message.includes('Unauthorized')) return res.status(403).json({ error: error.message });
         res.status(500).json({ error: error.message });
     }
 };

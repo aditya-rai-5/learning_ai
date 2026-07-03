@@ -18,6 +18,15 @@ router.post('/assessments/:assessmentId/questions', authenticateUser, assessment
 // Get assessment details (including answers, for instructors)
 router.get('/assessments/:assessmentId/instructor', authenticateUser, assessmentController.getAssessmentForInstructor);
 
+// Update assessment
+router.put('/assessments/:assessmentId', authenticateUser, assessmentController.updateAssessment);
+
+// Delete assessment
+router.delete('/assessments/:assessmentId', authenticateUser, assessmentController.deleteAssessment);
+
+// Delete a question
+router.delete('/questions/:questionId', authenticateUser, assessmentController.deleteQuestion);
+
 
 // --- STUDENT ENDPOINTS ---
 

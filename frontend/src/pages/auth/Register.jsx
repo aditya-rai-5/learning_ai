@@ -77,7 +77,6 @@ export default function Register() {
                     >
                         <option value="STUDENT">Student</option>
                         <option value="INSTRUCTOR">Instructor</option>
-                        <option value="ADMIN">Admin</option>
                     </select>
                 </div>
                 <button

@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { BookOpen, Clock, Loader2, PlayCircle } from 'lucide-react';
+import { BookOpen, Clock, Loader2, PlayCircle, Star } from 'lucide-react';
+import ReviewModal from '../../components/ReviewModal';
 
 export default function Dashboard() {
     const { user } = useAuth();
+    const [reviewModalCourse, setReviewModalCourse] = useState(null);
 
     const { data: enrollments = [], isLoading: loadingEnrollments, error: enrollmentsError } = useQuery({
         queryKey: ['dashboard-enrollments'],
@@ -97,16 +100,21 @@ export default function Dashboard() {
                                             <div className="bg-[#E97451] h-full rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
                                         </div>
                                         
-                                        <Link 
-                                            to={`/learn/${course?.id}`}
-                                            className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-medium text-sm transition-colors ${
-                                                isCompleted 
-                                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700' 
-                                                : 'bg-[#FFF0E8] text-[#E97451] hover:bg-[#FFE0D1] dark:bg-[#E97451]/10 dark:hover:bg-[#E97451]/20'
-                                            }`}
-                                        >
-                                            {isCompleted ? 'Review Course' : <><PlayCircle className="w-4 h-4" /> Continue Learning</>}
-                                        </Link>
+                                        {isCompleted ? (
+                                            <button 
+                                                onClick={() => setReviewModalCourse({ id: course.id, title: course.title })}
+                                                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-medium text-sm transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                            >
+                                                <Star className="w-4 h-4" /> Review Course
+                                            </button>
+                                        ) : (
+                                            <Link 
+                                                to={`/learn/${course?.id}`}
+                                                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-medium text-sm transition-colors bg-[#FFF0E8] text-[#E97451] hover:bg-[#FFE0D1] dark:bg-[#E97451]/10 dark:hover:bg-[#E97451]/20"
+                                            >
+                                                <PlayCircle className="w-4 h-4" /> Continue Learning
+                                            </Link>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -146,8 +154,14 @@ export default function Dashboard() {
                                 <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-[#E97451] transition-colors">{course.title}</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4">{course.description}</p>
                                 <div className="mt-auto flex items-center justify-between">
-                                    <span className="font-bold text-gray-900 dark:text-white">
+                                    <span className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                         {course.price > 0 ? `$${course.price}` : 'Free'}
+                                        {course.reviews && course.reviews.length > 0 && (
+                                            <span className="flex items-center gap-1 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md">
+                                                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                {(course.reviews.reduce((a,r) => a + r.rating, 0) / course.reviews.length).toFixed(1)}
+                                            </span>
+                                        )}
                                     </span>
                                     <Link 
                                         to={`/courses/${course.slug || course.id}`}
@@ -160,6 +174,15 @@ export default function Dashboard() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {reviewModalCourse && (
+                <ReviewModal
+                    isOpen={true}
+                    courseId={reviewModalCourse.id}
+                    courseTitle={reviewModalCourse.title}
+                    onClose={() => setReviewModalCourse(null)}
+                />
             )}
         </div>
     );

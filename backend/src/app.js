@@ -4,11 +4,14 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRoutes from "./auth/auth.routes.js";
 import userSkillRoutes from "./user_skill/user_skill.routes.js";
 import courseRoutes from "./course/course.routes.js";
 import moduleRoutes from "./module/module.routes.js";
 import paymentRoutes from "./payment/payment.routes.js";
+import payoutRoutes from "./payment/payout.routes.js";
 import enrollmentRoutes from "./enrollment/enrollment.routes.js";
 import assessmentRoutes from "./assessment/assessment.routes.js";
 import certificateRoutes from "./certificate/certificate.routes.js";
@@ -22,14 +25,22 @@ import aiRoutes from "./ai/ai.routes.js";
 import instructorRoutes from "./instructor/instructor.routes.js";
 import uploadRoutes from "./upload/upload.routes.js";
 import adminRoutes from "./admin/admin.routes.js";
+import { globalLimiter } from "./middleware/rateLimiter.middleware.js";
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Middleware
 app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
+
+// Apply global rate limiting to all /api routes
+app.use("/api", globalLimiter);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user-skills", userSkillRoutes);
@@ -38,6 +49,7 @@ app.use("/api/courses/:courseId/reviews", reviewRoutes);
 app.use("/api/courses/:courseId", aiRoutes);   // AI: /chat, /ingest, /ai-config, /document-sources
 app.use("/api/courses", courseRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/payouts", payoutRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/notifications", notificationRoutes);

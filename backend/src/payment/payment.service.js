@@ -26,20 +26,17 @@ export const initiateEnrollment = async (userId, courseId, gateway = "RAZORPAY")
         throw new Error("Already enrolled in this course");
     }
 
-    // 3. Check for existing in-progress or successful payments
+    // 3. Check for existing successful payments
     const existingPayment = await prisma.payment.findFirst({
         where: { 
             userId, 
             courseId,
-            status: { in: ['PENDING', 'SUCCESS'] }
+            status: 'SUCCESS'
         }
     });
 
     if (existingPayment) {
-        if (existingPayment.status === 'SUCCESS') {
-            throw new Error("Payment already completed for this course. Please contact support if you are not enrolled.");
-        }
-        throw new Error(`A payment is already pending for this course. Please complete it (Payment ID: ${existingPayment.id}).`);
+        throw new Error("Payment already completed for this course. Please contact support if you are not enrolled.");
     }
 
     const price = parseFloat(course.price);
@@ -86,9 +83,17 @@ export const initiateEnrollment = async (userId, courseId, gateway = "RAZORPAY")
             receipt: `rcpt_${userId}_${courseId}`.substring(0, 40)
         };
 
-        // Note: You can't await Razorpay inside a Prisma transaction easily if the transaction locks, 
-        // but it's an external API call. Ideally it should be outside the transaction, but we will do it here.
-        const order = await razorpay.orders.create(options);
+        if (amountInPaise < 100) {
+            throw new Error("Course price is too low for payment gateway processing. Minimum amount is 1.00 (or 100 paise/cents). Please update the course price.");
+        }
+
+        let order;
+        try {
+            order = await razorpay.orders.create(options);
+        } catch (err) {
+            console.error("Razorpay order creation failed:", err);
+            throw new Error(`Payment gateway error: ${err?.error?.description || err.message || 'Unknown error'}`);
+        }
 
         // 2. Save the pending payment with the Razorpay order ID as transactionId
         const payment = await tx.payment.create({

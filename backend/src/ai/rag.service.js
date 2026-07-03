@@ -1,51 +1,26 @@
-import OpenAI from 'openai';
 import prisma from '../config/db.config.js';
+import { pipeline } from '@xenova/transformers';
+import crypto from 'crypto';
 
-// Mistral's API is OpenAI-compatible — same SDK, just a different baseURL and key.
-// Free tier: https://console.mistral.ai → create an API key.
-
-let _mistral = null;
-const getMistral = () => {
-  if (!_mistral) {
-    // If running in test without an API key, fallback to a dummy key so initialization succeeds
-    // The key won't actually be used unless tests call the live API (which they should mock).
-    const apiKey = process.env.MISTRAL_API_KEY || (process.env.NODE_ENV === 'test' ? 'test-dummy-key' : undefined);
-
-    _mistral = new OpenAI({
-      apiKey: apiKey,
-      baseURL: 'https://api.mistral.ai/v1',
-    });
-  }
-  return _mistral;
+// Singleton for local embedding pipeline
+let extractor = null;
+const getExtractor = async () => {
+    if (!extractor) {
+        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    }
+    return extractor;
 };
 
-const EMBEDDING_MODEL = 'mistral-embed'; // 1024 dims — schema must use vector(1024)
-
 /**
- * Generate a 1024-dim embedding vector for a text string.
- * Newlines are collapsed to spaces (standard pre-processing for embeddings).
+ * Generate a 384-dim embedding vector for a text string using local model.
  */
 export const generateEmbedding = async (text) => {
-  const cleaned = text.replace(/\n+/g, ' ').trim();
-  const mistral = getMistral();
-  const response = await mistral.embeddings.create({
-    model: EMBEDDING_MODEL,
-    input: cleaned,
-  });
-  return response.data[0].embedding; // number[1024]
+    const cleaned = text.replace(/\n+/g, ' ').trim();
+    const extract = await getExtractor();
+    const output = await extract(cleaned, { pooling: 'mean', normalize: true });
+    return Array.from(output.data);
 };
 
-/**
- * Cosine-similarity vector search against rag_context using pgvector.
- *
- * Scoping rules:
- *   - moduleId provided → search only chunks for that module (tightest, fastest)
- *   - courseId only     → search all chunks across the whole course (broader fallback)
- *
- * Uses $queryRawUnsafe because Prisma does not support the pgvector <=> operator
- * natively. Values are controlled: embedding is floats from Mistral,
- * IDs are validated UUIDs, topK is an integer we own.
- */
 export const vectorSearch = async ({ embeddingVector, moduleId, courseId, topK = 5 }) => {
   const embStr = `[${embeddingVector.join(',')}]`;
 
@@ -56,11 +31,11 @@ export const vectorSearch = async ({ embeddingVector, moduleId, courseId, topK =
          rc.chunk_text,
          rc.chunk_order,
          rc.module_id,
-         1 - (rc.embedding <=> $1::vector) AS similarity
+         1 - (rc.embedding <=> $1::vector(384)) AS similarity
        FROM rag_context rc
        WHERE rc.module_id = $2
          AND rc.embedding IS NOT NULL
-       ORDER BY rc.embedding <=> $1::vector
+       ORDER BY rc.embedding <=> $1::vector(384)
        LIMIT $3`,
       embStr, moduleId, topK
     );
@@ -72,33 +47,17 @@ export const vectorSearch = async ({ embeddingVector, moduleId, courseId, topK =
        rc.chunk_text,
        rc.chunk_order,
        rc.module_id,
-       1 - (rc.embedding <=> $1::vector) AS similarity
+       1 - (rc.embedding <=> $1::vector(384)) AS similarity
      FROM rag_context rc
      JOIN modules m ON m.id = rc.module_id
      WHERE m.course_id = $2
        AND rc.embedding IS NOT NULL
-     ORDER BY rc.embedding <=> $1::vector
+     ORDER BY rc.embedding <=> $1::vector(384)
      LIMIT $3`,
     embStr, courseId, topK
   );
 };
 
-/**
- * Hybrid re-ranking for video modules.
- *
- * Blends semantic similarity with timestamp proximity to the user's playhead
- * so that a chunk physically near where they are watching is boosted — even
- * if it is not the most semantically similar result globally.
- *
- * Formula:  finalScore = similarity x wSemantic + proximity x wTemporal
- * Proximity = max(0, 1 - |chunk_midpoint_s - playheadS| / windowS)
- *
- * @param {Array}  chunks     - Results from vectorSearch()
- * @param {number} playheadS  - User's current position in seconds
- * @param {number} windowS    - Decay window in seconds (default 5 min)
- * @param {number} wSemantic  - Semantic weight (default 0.7)
- * @param {number} wTemporal  - Temporal weight (default 0.3)
- */
 export const hybridRankChunks = (chunks, playheadS, windowS = 300, wSemantic = 0.7, wTemporal = 0.3) => {
   return chunks
     .map(chunk => {

@@ -1,4 +1,6 @@
 import prisma from '../config/db.config.js';
+import { signModuleBody } from '../utils/s3.utils.js';
+import * as ingestionService from '../ai/ingestion.service.js';
 
 // Helper to verify user access to course modules
 const verifyAccess = async (user, courseId, courseRecord = null) => {
@@ -85,6 +87,11 @@ export const createModule = async (userId, courseId, moduleData) => {
             await tx.notification.createMany({ data: notificationsData });
         }
 
+        // Trigger AI Ingestion in background
+        if (newModule.contentType === 'TEXT') {
+            ingestionService.ingestModule(newModule.id, courseId).catch(err => console.error("RAG Ingestion error:", err));
+        }
+
         return newModule;
     });
 };
@@ -92,10 +99,12 @@ export const createModule = async (userId, courseId, moduleData) => {
 export const getModulesByCourseId = async (courseId, user) => {
     await verifyAccess(user, courseId);
 
-    return prisma.module.findMany({
+    const modules = await prisma.module.findMany({
         where: { courseId },
         orderBy: { order: 'asc' }
     });
+
+    return Promise.all(modules.map(m => signModuleBody(m)));
 };
 
 export const getModuleById = async (moduleId, user) => {
@@ -115,7 +124,7 @@ export const getModuleById = async (moduleId, user) => {
     
     await verifyAccess(user, module.course.id, module.course);
 
-    return module;
+    return signModuleBody(module);
 };
 
 export const updateModule = async (userId, moduleId, updateData) => {
@@ -168,6 +177,11 @@ export const updateModule = async (userId, moduleId, updateData) => {
                 }));
                 await tx.notification.createMany({ data: notificationsData });
             }
+
+            // Trigger AI Ingestion in background for the new version
+            if (updatedModule.contentType === 'TEXT') {
+                ingestionService.ingestModule(updatedModule.id, existingModule.courseId).catch(err => console.error("RAG Ingestion error:", err));
+            }
         }
 
         return updatedModule;
@@ -188,9 +202,10 @@ export const deleteModule = async (userId, moduleId) => {
     }
 
     return prisma.$transaction(async (tx) => {
-        await tx.contentVersion.deleteMany({
-            where: { moduleId }
-        });
+        await tx.ragContext.deleteMany({ where: { moduleId } });
+        await tx.bookmark.deleteMany({ where: { moduleId } });
+        await tx.progressTracking.deleteMany({ where: { moduleId } });
+        await tx.contentVersion.deleteMany({ where: { moduleId } });
 
         return tx.module.delete({
             where: { id: moduleId }

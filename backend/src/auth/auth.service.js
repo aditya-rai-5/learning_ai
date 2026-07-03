@@ -8,6 +8,10 @@ const JWT_EXPIRES_IN = "7d";
 export const registerUser = async (userData) => {
   const { email, password, name, role, avatarUrl } = userData;
 
+  if (role === 'ADMIN') {
+    throw new Error("Cannot register as an Admin. Admin accounts must be created manually.");
+  }
+
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
     where: { email },

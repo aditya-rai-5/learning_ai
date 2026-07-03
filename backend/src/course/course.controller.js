@@ -7,6 +7,7 @@ export const createCourse = async (req, res) => {
       return res.status(403).json({ error: "Only instructors are authorized to create courses" });
     }
 
+    console.log("CREATE COURSE BODY:", req.body);
     const { title, description, initialModule } = req.body;
     const userId = req.user.userId;
 
