@@ -19,7 +19,7 @@ export const createThread = async (authorId, threadData) => {
 export const getThreads = async (filters = {}) => {
     const { moduleId, courseId, tags, general } = filters;
     const where = {};
-    
+
     if (general === 'true') {
         where.moduleId = null;
         where.courseId = null;

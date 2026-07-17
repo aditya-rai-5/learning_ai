@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  db:
+    image: ankane/pgvector:latest # PostgreSQL with pgvector extension pre-installed
+    container_name: learnai-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: learnai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: learnai-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/learnai?schema=public
+      - JWT_SECRET=change_this_to_a_secure_random_string
+      # You should pass these in a real .env file instead:
+      # - AWS_REGION=${AWS_REGION}
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      # - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      # - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+    depends_on:
+      - db
+    restart: unless-stopped
+    # Mount uploads directory if you want local persistence (though AWS S3 is preferred)
+    volumes:
+      - backend_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Pass the backend URL to the Vite build process
+        - VITE_API_URL=http://localhost:5000/api
+    container_name: learnai-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  backend_uploads:

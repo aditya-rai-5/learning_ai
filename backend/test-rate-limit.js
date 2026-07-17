@@ -16,7 +16,6 @@ async function testRateLimiter() {
             });
 
             const data = await res.json();
-            
             if (res.status === 429) {
                 console.log(`[Request ${i}] ✅ SUCCESS: Blocked by Rate Limiter. Status: 429`);
                 console.log(`   Message: ${data.error}`);

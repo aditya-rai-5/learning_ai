@@ -2,11 +2,11 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3 = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'dummy_key',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'dummy_secret',
-  },
+    region: process.env.AWS_REGION || 'us-east-1',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'dummy_key',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'dummy_secret',
+    },
 });
 
 export const generateSignedUrl = async (fileUrl) => {
@@ -16,12 +16,11 @@ export const generateSignedUrl = async (fileUrl) => {
     }
 
     try {
-        // e.g. https://learning-ai-bucket.s3.us-east-1.amazonaws.com/videos/filename.mp4
         const urlObj = new URL(fileUrl);
         const hostParts = urlObj.hostname.split('.');
         let bucketName;
         let key = urlObj.pathname.substring(1); // remove leading slash
-        
+
         if (hostParts.length >= 4 && hostParts[1] === 's3') {
             // Virtual-hosted-style: bucket.s3.region.amazonaws.com
             bucketName = hostParts[0];
