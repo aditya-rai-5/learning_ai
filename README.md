@@ -34,10 +34,31 @@ LearnAI is a next-generation Learning Management System (LMS) built to provide h
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18+)
-- PostgreSQL (with `pgvector` extension installed)
+- Node.js (v18+) (For local development)
+- PostgreSQL (with `pgvector` extension installed) (For local development)
+- Docker & Docker Desktop (For containerized deployment)
 - AWS Account (S3 Bucket)
 - Razorpay Account
+
+### 🐳 Running with Docker (Recommended)
+
+The easiest way to get the entire application (Database, Backend, and Frontend) running is via Docker. 
+
+1. Ensure Docker Desktop is installed and running.
+2. Clone the repository and navigate to the root folder.
+3. Start the application using Docker Compose:
+   ```bash
+   docker compose up --build
+   ```
+4. Access the application:
+   - **Frontend**: http://localhost
+   - **Backend API**: http://localhost:5000
+
+*(Note: You will still need to provide valid `.env` variables in `docker-compose.yml` or a `.env` file for AWS S3 and Razorpay integrations to fully work).*
+
+---
+
+### 💻 Manual Local Setup
 
 ### 1. Database Setup
 Ensure you have a PostgreSQL instance running with the `pgvector` extension enabled:
