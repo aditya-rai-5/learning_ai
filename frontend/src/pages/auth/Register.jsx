@@ -69,6 +69,17 @@ export default function Register() {
                     />
                 </div>
 
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Role</label>
+                    <select
+                        value={form.role}
+                        onChange={e => setForm({ ...form, role: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#FFF0E8]0 focus:border-transparent"
+                    >
+                        <option value="STUDENT">Student</option>
+                        <option value="INSTRUCTOR">Instructor</option>
+                    </select>
+                </div>
                 <button
                     type="submit"
                     disabled={loading}

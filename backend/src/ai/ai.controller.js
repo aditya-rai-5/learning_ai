@@ -1,12 +1,10 @@
-import * as aiService        from './ai.service.js';
-import * as ingestionService  from './ingestion.service.js';
-
-// ─── Chat / RAG ────────────────────────────────────────────────────────────
+import * as aiService from './ai.service.js';
+import * as ingestionService from './ingestion.service.js';
 
 export const chat = async (req, res) => {
   try {
-    const { courseId }               = req.params;
-    const { userId, role }           = req.user;
+    const { courseId } = req.params;
+    const { userId, role } = req.user;
     const { question, moduleId, playheadS } = req.body;
 
     if (!question || typeof question !== 'string' || !question.trim()) {
@@ -16,8 +14,8 @@ export const chat = async (req, res) => {
     const result = await aiService.askQuestion({
       userId,
       courseId,
-      moduleId:  moduleId  || null,
-      question:  question.trim(),
+      moduleId: moduleId || null,
+      question: question.trim(),
       playheadS: playheadS !== undefined ? Number(playheadS) : undefined,
     });
 
@@ -31,15 +29,15 @@ export const chat = async (req, res) => {
 
 export const getChatHistory = async (req, res) => {
   try {
-    const { courseId }     = req.params;
-    const { userId }       = req.user;
+    const { courseId } = req.params;
+    const { userId } = req.user;
     const { moduleId, limit } = req.query;
 
     const history = await aiService.getChatHistory({
       userId,
       courseId,
       moduleId: moduleId || null,
-      limit:    limit ? Number(limit) : 50,
+      limit: limit ? Number(limit) : 50,
     });
 
     res.status(200).json(history);
@@ -51,7 +49,7 @@ export const getChatHistory = async (req, res) => {
 export const submitFeedback = async (req, res) => {
   try {
     const { interactionId } = req.params;
-    const { userId }        = req.user;
+    const { userId } = req.user;
     const { rating, comment } = req.body;
 
     if (rating === undefined) {
@@ -61,7 +59,7 @@ export const submitFeedback = async (req, res) => {
     const feedback = await aiService.submitFeedback({
       userId,
       interactionId,
-      rating:  Number(rating),
+      rating: Number(rating),
       comment: comment || null,
     });
 
@@ -80,9 +78,9 @@ export const submitFeedback = async (req, res) => {
 
 export const ingestModule = async (req, res) => {
   try {
-    const { courseId }   = req.params;
-    const { role }       = req.user;
-    const { moduleId }   = req.body;
+    const { courseId } = req.params;
+    const { role } = req.user;
+    const { moduleId } = req.body;
 
     if (role !== 'INSTRUCTOR' && role !== 'ADMIN') {
       return res.status(403).json({ error: 'Only instructors can trigger ingestion' });
@@ -124,13 +122,13 @@ export const getAiConfig = async (req, res) => {
 
 export const upsertAiConfig = async (req, res) => {
   try {
-    const { courseId }   = req.params;
+    const { courseId } = req.params;
     const { userId, role } = req.user;
 
     const config = await aiService.upsertAiConfig(userId, role, courseId, req.body);
     res.status(200).json({ message: 'AI config saved', config });
   } catch (error) {
-    if (error.message.includes('not found'))  return res.status(404).json({ error: error.message });
+    if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
     if (error.message.includes('Unauthorized')) return res.status(403).json({ error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -150,7 +148,7 @@ export const getDocumentSources = async (req, res) => {
 
 export const addDocumentSource = async (req, res) => {
   try {
-    const { courseId }     = req.params;
+    const { courseId } = req.params;
     const { userId, role } = req.user;
     const { title, sourceUrl } = req.body;
 
@@ -161,7 +159,7 @@ export const addDocumentSource = async (req, res) => {
     const source = await aiService.addDocumentSource(userId, role, courseId, { title, sourceUrl });
     res.status(201).json({ message: 'Document source added', source });
   } catch (error) {
-    if (error.message.includes('not found'))    return res.status(404).json({ error: error.message });
+    if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
     if (error.message.includes('Unauthorized')) return res.status(403).json({ error: error.message });
     res.status(500).json({ error: error.message });
   }
@@ -170,12 +168,12 @@ export const addDocumentSource = async (req, res) => {
 export const deleteDocumentSource = async (req, res) => {
   try {
     const { courseId, sourceId } = req.params;
-    const { userId, role }       = req.user;
+    const { userId, role } = req.user;
 
     await aiService.deleteDocumentSource(userId, role, courseId, sourceId);
     res.status(200).json({ message: 'Document source removed' });
   } catch (error) {
-    if (error.message.includes('not found'))    return res.status(404).json({ error: error.message });
+    if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
     if (error.message.includes('Unauthorized')) return res.status(403).json({ error: error.message });
     res.status(500).json({ error: error.message });
   }
